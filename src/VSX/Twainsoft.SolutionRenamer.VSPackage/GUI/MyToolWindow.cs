@@ -1,14 +1,7 @@
-﻿using System;
-using System.Collections;
-using System.ComponentModel;
-using System.Drawing;
-using System.Data;
-using System.Windows;
-using System.Runtime.InteropServices;
-using Microsoft.VisualStudio.Shell.Interop;
+﻿using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.Shell;
 
-namespace Twainsoft.Twainsoft_SolutionRenamer_VSPackage
+namespace Twainsoft.SolutionRenamer.VSPackage.GUI
 {
     /// <summary>
     /// This class implements the tool window exposed by this package and hosts a user control.
@@ -29,7 +22,7 @@ namespace Twainsoft.Twainsoft_SolutionRenamer_VSPackage
             base(null)
         {
             // Set the window title reading it from the resources.
-            this.Caption = Resources.ToolWindowTitle;
+            this.Caption = Resources.Resources.ToolWindowTitle;
             // Set the image that will appear on the tab of the window frame
             // when docked with an other window
             // The resource ID correspond to the one defined in the resx file

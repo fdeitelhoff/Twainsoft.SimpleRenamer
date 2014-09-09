@@ -2,7 +2,7 @@
 // MUST match guids.h
 using System;
 
-namespace Twainsoft.Twainsoft_SolutionRenamer_VSPackage
+namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 {
     static class GuidList
     {

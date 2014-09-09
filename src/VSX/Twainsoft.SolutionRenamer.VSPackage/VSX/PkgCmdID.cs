@@ -1,8 +1,7 @@
 ﻿// PkgCmdID.cs
 // MUST match PkgCmdID.h
-using System;
 
-namespace Twainsoft.Twainsoft_SolutionRenamer_VSPackage
+namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 {
     static class PkgCmdIDList
     {
