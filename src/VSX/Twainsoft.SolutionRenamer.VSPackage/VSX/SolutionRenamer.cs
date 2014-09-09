@@ -1,6 +1,9 @@
 ﻿using System;
 using System.ComponentModel.Design;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
+using EnvDTE;
+using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Twainsoft.SolutionRenamer.VSPackage.GUI;
@@ -44,6 +47,26 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 MenuCommand menuToolWin = new MenuCommand(OnShowToolWindow, toolwndCommandID);
                 mcs.AddCommand( menuToolWin );
             }
+
+            //var service = GetService(typeof (SVsSolution)) as IVsSolution;
+
+            //uint cookie = 1;
+            //service.AdviseSolutionEvents(this, out cookie);
+            DTE2 = Package.GetGlobalService(typeof(SDTE)) as EnvDTE.DTE;
+            DTE2.Events.SolutionEvents.ProjectRenamed += SolutionEventsOnProjectRenamed;
+            DTE2.Events.SolutionEvents.Renamed += SolutionEventsOnRenamed;
+        }
+
+        private void SolutionEventsOnRenamed(string oldName)
+        {
+            Debug.WriteLine("SolutionEventsOnRenamed");
+        }
+
+        public DTE DTE2 { get; set; }
+
+        private void SolutionEventsOnProjectRenamed(Project project, string oldName)
+        {
+            Debug.WriteLine("SolutionEventsOnProjectRenamed");
         }
     }
 }
