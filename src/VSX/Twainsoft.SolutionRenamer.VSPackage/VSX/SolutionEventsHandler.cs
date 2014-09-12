@@ -1,5 +1,6 @@
 ﻿using System;
 using EnvDTE;
+using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Interop;
 
@@ -35,7 +36,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
             var p = project as Project;
 
-            // 1. The solution file (.sln) must reflect the new name.
+            // 1. The solution file (.sln) must reflect the new project name, so we save the solution first.
             SaveSolutionFile();
 
             // 2. If the project directory contains the old project name, rename it.
@@ -48,6 +49,11 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
         private void RenameProjectDirectory(Project project)
         {
+            var solutionPath = project.DTE.Solution.FullName;
+
+            var workspace = MSBuildWorkspace.Create();
+            var solution = workspace.OpenSolutionAsync(solutionPath).Result;
+
             //IVsHierarchy hierarchy;
             //Solution.GetProjectOfUniqueName(project.UniqueName, out hierarchy);
 
