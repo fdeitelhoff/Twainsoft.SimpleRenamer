@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using EnvDTE;
 using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.VisualStudio;
@@ -26,33 +27,56 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
         public int OnAfterRenameProject(IVsHierarchy hierarchy)
         {
-            object project;
+            try
+            {
+                //object project;
 
-            ErrorHandler.ThrowOnFailure
-                (hierarchy.GetProperty(
-                    VSConstants.VSITEMID_ROOT,
-                    (int)__VSHPROPID.VSHPROPID_ExtObject,
-                    out project));
+                //ErrorHandler.ThrowOnFailure
+                //    (hierarchy.GetProperty(
+                //        VSConstants.VSITEMID_ROOT,
+                //        (int) __VSHPROPID.VSHPROPID_ExtObject,
+                //        out project));
 
-            var p = project as Project;
+                //var p = project as Project;
+                Project p = null;
+                // 1. The solution file (.sln) must reflect the new project name, so we save the solution first.
+                SaveSolutionFile();
 
-            // 1. The solution file (.sln) must reflect the new project name, so we save the solution first.
-            SaveSolutionFile();
+                Solution.CloseSolutionElement((uint)__VSSLNCLOSEOPTIONS.SLNCLOSEOPT_UnloadProject, hierarchy, 0);
 
-            // 2. If the project directory contains the old project name, rename it.
-            RenameProjectDirectory(p);
-
+                // 2. If the project directory contains the old project name, rename it.
+                RenameProjectDirectory(p, hierarchy);
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e);
+            }
             return VSConstants.S_OK;
             //return VSConstants.E_NOTIMPL;
             //throw new NotImplementedException();
         }
 
-        private void RenameProjectDirectory(Project project)
+        private void RenameProjectDirectory(Project project, IVsHierarchy hierarchy)
         {
-            var solutionPath = project.DTE.Solution.FullName;
+            //var solutionPath = project.DTE.Solution.FullName;
+            //var projectFullName = project.FullName;
 
-            var workspace = MSBuildWorkspace.Create();
-            var solution = workspace.OpenSolutionAsync(solutionPath).Result;
+            //IVsHierarchy selectedHierarchy;
+            ////Solution.GetGuidOfProject()
+            //Solution.GetProjectOfUniqueName(project.UniqueName, out selectedHierarchy);
+
+            //Solution.CloseSolutionElement((uint)__VSSLNCLOSEOPTIONS.SLNCLOSEOPT_UnloadProject, hierarchy, 0);
+
+            //SaveSolutionFile();
+
+            //var projectType = Guid.Empty;
+            //var projectIid = Guid.Empty;
+            //IntPtr proj;
+            //Solution.CreateProject(ref projectType, projectFullName, null, null, (uint)__VSCREATEPROJFLAGS.CPF_OPENFILE, ref projectIid,
+            //    out proj);
+
+            //var workspace = MSBuildWorkspace.Create();
+            //var solution = workspace.OpenSolutionAsync(solutionPath).Result;
 
             //IVsHierarchy hierarchy;
             //Solution.GetProjectOfUniqueName(project.UniqueName, out hierarchy);
