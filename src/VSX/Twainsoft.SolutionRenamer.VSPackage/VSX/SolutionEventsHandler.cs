@@ -25,27 +25,29 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
             EventsCookie = 1;
         }
 
+        public IVsHierarchy hier;
+
         public int OnAfterRenameProject(IVsHierarchy hierarchy)
         {
+            hier = hierarchy;
+
             try
             {
-                //object project;
+                object project;
 
-                //ErrorHandler.ThrowOnFailure
-                //    (hierarchy.GetProperty(
-                //        VSConstants.VSITEMID_ROOT,
-                //        (int) __VSHPROPID.VSHPROPID_ExtObject,
-                //        out project));
+                ErrorHandler.ThrowOnFailure
+                    (hierarchy.GetProperty(
+                        VSConstants.VSITEMID_ROOT,
+                        (int)__VSHPROPID.VSHPROPID_ExtObject,
+                        out project));
 
-                //var p = project as Project;
-                Project p = null;
+                var p = project as Project;
+                //Project p = null;
                 // 1. The solution file (.sln) must reflect the new project name, so we save the solution first.
                 SaveSolutionFile();
 
-                Solution.CloseSolutionElement((uint)__VSSLNCLOSEOPTIONS.SLNCLOSEOPT_UnloadProject, hierarchy, 0);
-
                 // 2. If the project directory contains the old project name, rename it.
-                RenameProjectDirectory(p, hierarchy);
+                //RenameProjectDirectory(p, hierarchy);
             }
             catch (Exception e)
             {
@@ -61,11 +63,11 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
             //var solutionPath = project.DTE.Solution.FullName;
             //var projectFullName = project.FullName;
 
-            //IVsHierarchy selectedHierarchy;
+            IVsHierarchy selectedHierarchy;
             ////Solution.GetGuidOfProject()
-            //Solution.GetProjectOfUniqueName(project.UniqueName, out selectedHierarchy);
+            Solution.GetProjectOfUniqueName(project.UniqueName, out selectedHierarchy);
 
-            //Solution.CloseSolutionElement((uint)__VSSLNCLOSEOPTIONS.SLNCLOSEOPT_UnloadProject, hierarchy, 0);
+            Solution.CloseSolutionElement((uint)__VSSLNCLOSEOPTIONS.SLNCLOSEOPT_UnloadProject, selectedHierarchy, 0);
 
             //SaveSolutionFile();
 

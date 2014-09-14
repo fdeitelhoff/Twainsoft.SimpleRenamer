@@ -1,6 +1,8 @@
 ﻿using System;
 using System.ComponentModel.Design;
 using System.Runtime.InteropServices;
+using EnvDTE;
+using EnvDTE80;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -16,7 +18,9 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
     [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExists_string)]
     public sealed class SolutionRenamer : Package
     {
-        private SolutionEventsHandler SolutionEventsHandler { get; set; }
+        //private SolutionEventsHandler SolutionEventsHandler { get; set; }
+        //public DTE Dte2 { get; set; }
+        //private IVsSolution Solution { get; set; }
 
         protected override void Initialize()
         {
@@ -36,15 +40,25 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 mcs.AddCommand( menuToolWin );
             }
 
-            var solution = GetGlobalService(typeof(IVsSolution)) as IVsSolution;
+            //var solution = GetGlobalService(typeof(IVsSolution)) as IVsSolution;
+            //Solution = solution;
+            //SolutionEventsHandler = new SolutionEventsHandler(solution);
 
-            SolutionEventsHandler = new SolutionEventsHandler(solution);
-
-            solution.AdviseSolutionEvents(SolutionEventsHandler, out SolutionEventsHandler.EventsCookie);
-            //DTE2 = Package.GetGlobalService(typeof(SDTE)) as EnvDTE.DTE;
-            //DTE2.Events.SolutionEvents.ProjectRenamed += SolutionEventsOnProjectRenamed;
+            //solution.AdviseSolutionEvents(SolutionEventsHandler, out SolutionEventsHandler.EventsCookie);
+            //Dte2 = Package.GetGlobalService(typeof(SDTE)) as EnvDTE.DTE;
+            //Dte2.Events.SolutionEvents.ProjectRenamed += SolutionEventsOnProjectRenamed;
             //DTE2.Events.SolutionEvents.Renamed += SolutionEventsOnRenamed;
         }
+
+        //private void SolutionEventsOnProjectRenamed(Project project, string oldname)
+        //{
+        //    Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
+
+        //    IVsHierarchy selectedHierarchy;
+        //    Solution.GetProjectOfUniqueName(project.UniqueName, out selectedHierarchy);
+
+        //    Solution.CloseSolutionElement((uint)__VSSLNCLOSEOPTIONS.SLNCLOSEOPT_UnloadProject, selectedHierarchy, 0);
+        //}
 
         private void OnShowToolWindow(object sender, EventArgs e)
         {
@@ -55,6 +69,12 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
             }
             var windowFrame = (IVsWindowFrame)window.Frame;
             Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(windowFrame.Show());
+
+            //var Solution = GetGlobalService(typeof(IVsSolution)) as IVsSolution;
+
+            //var hierarchy = SolutionEventsHandler.hier;
+
+            //Solution.CloseSolutionElement((uint)__VSSLNCLOSEOPTIONS.SLNCLOSEOPT_UnloadProject, hierarchy, 0);
         }
 
         //private void SolutionEventsOnRenamed(string oldName)
