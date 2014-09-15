@@ -154,6 +154,9 @@
       <DependentUpon>MyControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="GUI\MyToolWindow.cs" />
+    <Compile Include="GUI\RenameProjectDialog.xaml.cs">
+      <DependentUpon>RenameProjectDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="VSX\Guids.cs" />
     <Compile Include="Resources\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -187,6 +190,7 @@
   <ItemGroup>
     <VSCTCompile Include="VSX\SolutionRenamer.vsct">
       <ResourceName>Menus.ctmenu</ResourceName>
+      <SubType>Designer</SubType>
     </VSCTCompile>
   </ItemGroup>
   <ItemGroup>
@@ -197,6 +201,10 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="GUI\MyControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="GUI\RenameProjectDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

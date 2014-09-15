@@ -2,7 +2,6 @@
 using System.ComponentModel.Design;
 using System.Runtime.InteropServices;
 using EnvDTE;
-using EnvDTE80;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -62,19 +61,81 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
         private void OnShowToolWindow(object sender, EventArgs e)
         {
-            var window = this.FindToolWindow(typeof(MyToolWindow), 0, true);
-            if ((null == window) || (null == window.Frame))
+            var rename = new RenameProjectDialog();
+            var result = rename.ShowDialog();
+            if (result.HasValue && result.Value)
             {
-                throw new NotSupportedException(Resources.Resources.CanNotCreateWindow);
+                var Solution = GetGlobalService(typeof (IVsSolution)) as IVsSolution;
+
+                IntPtr hierarchyPointer, selectionContainerPointer;
+                Object selectedObject = null;
+                IVsMultiItemSelect multiItemSelect;
+                uint projectItemId;
+
+                IVsMonitorSelection monitorSelection =
+                    (IVsMonitorSelection) Package.GetGlobalService(
+                        typeof (SVsShellMonitorSelection));
+
+                monitorSelection.GetCurrentSelection(out hierarchyPointer,
+                    out projectItemId,
+                    out multiItemSelect,
+                    out selectionContainerPointer);
+
+                IVsHierarchy selectedHierarchy = Marshal.GetTypedObjectForIUnknown(
+                    hierarchyPointer,
+                    typeof (IVsHierarchy)) as IVsHierarchy;
+
+                if (selectedHierarchy != null)
+                {
+                    ErrorHandler.ThrowOnFailure(selectedHierarchy.GetProperty(
+                        projectItemId,
+                        (int) __VSHPROPID.VSHPROPID_ExtObject,
+                        out selectedObject));
+                }
+
+                Project selectedProject = selectedObject as Project;
+                
+
+                selectedProject.Name = rename.GetProjectName();
+                //selectedProject.Save(selectedProject.FileName);
+
+                var fullName = selectedProject.FullName;
+
+                IVsHierarchy unloadHierarchy;
+                ////Solution.GetGuidOfProject()
+                Solution.GetProjectOfUniqueName(selectedProject.UniqueName, out unloadHierarchy);
+
+                // Save the complete solution.
+                Solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
+
+                // Save the renamed project.
+                Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, unloadHierarchy, 0);
+
+                // Unload the saved project.
+                Solution.CloseSolutionElement((uint) __VSSLNCLOSEOPTIONS.SLNCLOSEOPT_UnloadProject, unloadHierarchy, 0);
+
+                var projectType = Guid.Empty;
+                var projectIid = Guid.Empty;
+                IntPtr proj;
+                Solution.CreateProject(ref projectType, fullName, null, null, (uint)__VSCREATEPROJFLAGS.CPF_OPENFILE, ref projectIid,
+                    out proj);
+
+                //Solution.OnAfterRenameProject(selectedProject, selectedProject.Name, "bla", 0);
+
+                //var window = this.FindToolWindow(typeof(MyToolWindow), 0, true);
+                //if ((null == window) || (null == window.Frame))
+                //{
+                //    throw new NotSupportedException(Resources.Resources.CanNotCreateWindow);
+                //}
+                //var windowFrame = (IVsWindowFrame)window.Frame;
+                //Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(windowFrame.Show());
+
+                //var Solution = GetGlobalService(typeof(IVsSolution)) as IVsSolution;
+
+                //var hierarchy = SolutionEventsHandler.hier;
+
+                //Solution.CloseSolutionElement((uint)__VSSLNCLOSEOPTIONS.SLNCLOSEOPT_UnloadProject, hierarchy, 0);
             }
-            var windowFrame = (IVsWindowFrame)window.Frame;
-            Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(windowFrame.Show());
-
-            //var Solution = GetGlobalService(typeof(IVsSolution)) as IVsSolution;
-
-            //var hierarchy = SolutionEventsHandler.hier;
-
-            //Solution.CloseSolutionElement((uint)__VSSLNCLOSEOPTIONS.SLNCLOSEOPT_UnloadProject, hierarchy, 0);
         }
 
         //private void SolutionEventsOnRenamed(string oldName)

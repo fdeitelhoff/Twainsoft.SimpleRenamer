@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using EnvDTE;
-using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Interop;
 
