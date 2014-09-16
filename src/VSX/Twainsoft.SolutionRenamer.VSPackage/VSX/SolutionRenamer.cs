@@ -1,7 +1,9 @@
 ﻿using System;
 using System.ComponentModel.Design;
+using System.IO;
 using System.Runtime.InteropServices;
 using EnvDTE;
+using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -94,12 +96,15 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 }
 
                 Project selectedProject = selectedObject as Project;
-                
+
+                var fileName = Path.GetFileNameWithoutExtension(selectedProject.FileName);
+                var directory = new DirectoryInfo(selectedProject.FullName).Parent.Name;
+                var solutionPath = selectedProject.DTE.Solution.FullName;
 
                 selectedProject.Name = rename.GetProjectName();
-                //selectedProject.Save(selectedProject.FileName);
 
                 var fullName = selectedProject.FullName;
+                var newDirectory = Path.GetFileNameWithoutExtension(selectedProject.FileName);
 
                 IVsHierarchy unloadHierarchy;
                 ////Solution.GetGuidOfProject()
@@ -114,11 +119,25 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 // Unload the saved project.
                 Solution.CloseSolutionElement((uint) __VSSLNCLOSEOPTIONS.SLNCLOSEOPT_UnloadProject, unloadHierarchy, 0);
 
-                var projectType = Guid.Empty;
-                var projectIid = Guid.Empty;
-                IntPtr proj;
-                Solution.CreateProject(ref projectType, fullName, null, null, (uint)__VSCREATEPROJFLAGS.CPF_OPENFILE, ref projectIid,
-                    out proj);
+                //var projectType = Guid.Empty;
+                //var projectIid = Guid.Empty;
+                //IntPtr proj;
+                //Solution.CreateProject(ref projectType, fullName, null, null, (uint)__VSCREATEPROJFLAGS.CPF_OPENFILE, ref projectIid,
+                //    out proj);
+
+                if (fileName == directory)
+                {
+                    var di = new DirectoryInfo(fullName).Parent;
+                    di.MoveTo(Path.Combine(di.Parent.FullName, newDirectory));
+
+                    //new DirectoryInfo(selectedProject.FullName).Parent.MoveTo();
+
+                    var workspace = MSBuildWorkspace.Create();
+                    var solution = workspace.OpenSolutionAsync(solutionPath).Result;
+                }
+
+                var dte = Package.GetGlobalService(typeof(SDTE)) as EnvDTE.DTE;
+                dte.ExecuteCommand("Project.ReloadProject");
 
                 //Solution.OnAfterRenameProject(selectedProject, selectedProject.Name, "bla", 0);
 
