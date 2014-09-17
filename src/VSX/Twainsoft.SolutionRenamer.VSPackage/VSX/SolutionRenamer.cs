@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel.Design;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using EnvDTE;
@@ -97,6 +98,12 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                 Project selectedProject = selectedObject as Project;
 
+                IVsHierarchy projHierarchy;
+                Solution.GetProjectOfUniqueName(selectedProject.UniqueName, out projHierarchy);
+
+                var projectGuid = Guid.Empty;
+                Solution.GetGuidOfProject(projHierarchy, out projectGuid);
+
                 var fileName = Path.GetFileNameWithoutExtension(selectedProject.FileName);
                 var directory = new DirectoryInfo(selectedProject.FullName).Parent.Name;
                 var solutionPath = selectedProject.DTE.Solution.FullName;
@@ -107,7 +114,6 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 var newDirectory = Path.GetFileNameWithoutExtension(selectedProject.FileName);
 
                 IVsHierarchy unloadHierarchy;
-                ////Solution.GetGuidOfProject()
                 Solution.GetProjectOfUniqueName(selectedProject.UniqueName, out unloadHierarchy);
 
                 // Save the complete solution.
@@ -115,9 +121,6 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                 // Save the renamed project.
                 Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, unloadHierarchy, 0);
-
-                // Unload the saved project.
-                Solution.CloseSolutionElement((uint) __VSSLNCLOSEOPTIONS.SLNCLOSEOPT_UnloadProject, unloadHierarchy, 0);
 
                 //var projectType = Guid.Empty;
                 //var projectIid = Guid.Empty;
@@ -127,17 +130,42 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                 if (fileName == directory)
                 {
-                    var di = new DirectoryInfo(fullName).Parent;
-                    di.MoveTo(Path.Combine(di.Parent.FullName, newDirectory));
+                    var solution2 = Solution as IVsSolution2;
+                    var solution4 = Solution as IVsSolution4;
+                    //var workspace = MSBuildWorkspace.Create();
+                    //var solution = workspace.OpenSolutionAsync(solutionPath).Result;
+
+                    // Unload the saved project.
+                    //Solution.CloseSolutionElement((uint)__VSSLNCLOSEOPTIONS.SLNCLOSEOPT_UnloadProject, unloadHierarchy, 0);
+                    solution4.UnloadProject(projectGuid, (uint)_VSProjectUnloadStatus.UNLOADSTATUS_LoadPendingIfNeeded);
+
+                    // Save the renamed project.
+                    Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, unloadHierarchy, 0);
+
+                    // Save the complete solution.
+                    Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
+
+                    try
+                    {
+                        var di = new DirectoryInfo(fullName).Parent;
+                        di.MoveTo(Path.Combine(di.Parent.FullName, newDirectory));
+                        //solution3.UpdateProjectFileLocationForUpgrade(di.FullName, Path.Combine(di.Parent.FullName, newDirectory));
+                        solution2.UpdateProjectFileLocation(unloadHierarchy);
+
+                        // Save the complete solution.
+                        Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
+                    }
+                    catch (Exception e2)
+                    {
+                        Debug.WriteLine(e2);
+                    }
 
                     //new DirectoryInfo(selectedProject.FullName).Parent.MoveTo();
 
-                    var workspace = MSBuildWorkspace.Create();
-                    var solution = workspace.OpenSolutionAsync(solutionPath).Result;
+                    //var dte = Package.GetGlobalService(typeof(SDTE)) as EnvDTE.DTE;
+                    //dte.ExecuteCommand("Project.ReloadProject");
+                    solution4.ReloadProject(projectGuid);
                 }
-
-                var dte = Package.GetGlobalService(typeof(SDTE)) as EnvDTE.DTE;
-                dte.ExecuteCommand("Project.ReloadProject");
 
                 //Solution.OnAfterRenameProject(selectedProject, selectedProject.Name, "bla", 0);
 
