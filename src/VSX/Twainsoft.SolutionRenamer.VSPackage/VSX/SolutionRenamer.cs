@@ -3,6 +3,7 @@ using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using EnvDTE;
 using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.VisualStudio;
@@ -64,6 +65,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
         private void OnShowToolWindow(object sender, EventArgs e)
         {
+            // Check if its necessarry to save the solution file and project file that often!
             var rename = new RenameProjectDialog();
             var result = rename.ShowDialog();
             if (result.HasValue && result.Value)
@@ -107,6 +109,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 var fileName = Path.GetFileNameWithoutExtension(selectedProject.FileName);
                 var directory = new DirectoryInfo(selectedProject.FullName).Parent.Name;
                 var solutionPath = selectedProject.DTE.Solution.FullName;
+                var fname = selectedProject.FileName;
 
                 selectedProject.Name = rename.GetProjectName();
 
@@ -131,29 +134,63 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 if (fileName == directory)
                 {
                     var solution2 = Solution as IVsSolution2;
+                    var solution3 = Solution as IVsSolution3;
                     var solution4 = Solution as IVsSolution4;
                     //var workspace = MSBuildWorkspace.Create();
                     //var solution = workspace.OpenSolutionAsync(solutionPath).Result;
 
                     // Unload the saved project.
                     //Solution.CloseSolutionElement((uint)__VSSLNCLOSEOPTIONS.SLNCLOSEOPT_UnloadProject, unloadHierarchy, 0);
-                    solution4.UnloadProject(projectGuid, (uint)_VSProjectUnloadStatus.UNLOADSTATUS_LoadPendingIfNeeded);
+                    //solution4.UnloadProject(projectGuid, (uint)_VSProjectUnloadStatus.UNLOADSTATUS_LoadPendingIfNeeded);
+                    //Solution.re
 
-                    // Save the renamed project.
-                    Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, unloadHierarchy, 0);
+                    //// Save the renamed project.
+                    //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, unloadHierarchy, 0);
 
-                    // Save the complete solution.
-                    Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
+                    //// Save the complete solution.
+                    //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
 
                     try
                     {
+                        Solution.CloseSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_NoSave | (uint)__VSSLNCLOSEOPTIONS.SLNCLOSEOPT_DeleteProject, unloadHierarchy, 0);
+
                         var di = new DirectoryInfo(fullName).Parent;
                         di.MoveTo(Path.Combine(di.Parent.FullName, newDirectory));
                         //solution3.UpdateProjectFileLocationForUpgrade(di.FullName, Path.Combine(di.Parent.FullName, newDirectory));
-                        solution2.UpdateProjectFileLocation(unloadHierarchy);
+                        //solution2.UpdateProjectFileLocation(unloadHierarchy);
+
+                        var dte = Package.GetGlobalService(typeof(SDTE)) as EnvDTE80.DTE2;
+
+                        var di2 = new DirectoryInfo(fullName).Parent;
+
+                        dte.Solution.AddFromFile(Path.Combine(Path.Combine(di2.Parent.FullName, newDirectory), fname));
 
                         // Save the complete solution.
                         Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
+
+                        //solution3.UpdateProjectFileLocationForUpgrade(di.FullName, Path.Combine(di.Parent.FullName, newDirectory));
+
+                        // Save the renamed project.
+                        //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, unloadHierarchy, 0);
+
+                        // Save the complete solution.
+                        //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
+
+                        //using (var reader = new StreamReader(solutionPath))
+                        //{
+                        //    var contents = reader.ReadToEnd();
+
+                        //    //var regex = "Project(\"{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}\") = \"ConsoleApplication1\", \"" + directory
+                        //    //    + "ConsoleApplication1.csproj\", \"" + projectGuid + "\"";
+
+                        //    //var replace = "Project(\"{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}\") = \"ConsoleApplication1\", \"" + newDirectory
+                        //    //    + "ConsoleApplication1.csproj\", \"" + projectGuid + "\"";
+
+                        //    //Regex.Replace(contents, regex, replace);
+
+                        //    //File.WriteAllText(solutionPath, contents);
+
+                        //}
                     }
                     catch (Exception e2)
                     {
