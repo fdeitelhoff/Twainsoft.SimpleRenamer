@@ -5,6 +5,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using EnvDTE;
+using EnvDTE80;
 using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
@@ -109,10 +110,12 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 var fileName = Path.GetFileNameWithoutExtension(selectedProject.FileName);
                 var directory = new DirectoryInfo(selectedProject.FullName).Parent.Name;
                 var solutionPath = selectedProject.DTE.Solution.FullName;
-                var fname = selectedProject.FileName;
+
+                var bla = selectedProject.ParentProjectItem.Name;
 
                 selectedProject.Name = rename.GetProjectName();
 
+                var fname = Path.GetFileName(selectedProject.FileName);
                 var fullName = selectedProject.FullName;
                 var newDirectory = Path.GetFileNameWithoutExtension(selectedProject.FileName);
 
@@ -122,8 +125,8 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 // Save the complete solution.
                 Solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
 
-                // Save the renamed project.
-                Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, unloadHierarchy, 0);
+                //// Save the renamed project.
+                //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, unloadHierarchy, 0);
 
                 //var projectType = Guid.Empty;
                 //var projectIid = Guid.Empty;
@@ -152,7 +155,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                     try
                     {
-                        Solution.CloseSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_NoSave | (uint)__VSSLNCLOSEOPTIONS.SLNCLOSEOPT_DeleteProject, unloadHierarchy, 0);
+                        Solution.CloseSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave | (uint)__VSSLNCLOSEOPTIONS.SLNCLOSEOPT_DeleteProject, unloadHierarchy, 0);
 
                         var di = new DirectoryInfo(fullName).Parent;
                         di.MoveTo(Path.Combine(di.Parent.FullName, newDirectory));
@@ -161,12 +164,31 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                         var dte = Package.GetGlobalService(typeof(SDTE)) as EnvDTE80.DTE2;
 
+                        SolutionFolder sf;
+
+                        foreach (Project proj in dte.Solution.Projects)
+                        {
+                            //System.Windows.Forms.MessageBox.Show(proj.Kind, " proj.Kind ");
+
+                            //System.Windows.Forms.MessageBox.Show(proj.Name, " proj.Name ");
+
+
+
+                            if (proj.Kind == ProjectKinds.vsProjectKindSolutionFolder)
+                            {
+
+                                sf = (SolutionFolder)proj.Object;
+                                //sf.AddFromTemplate(templateFile, destination, strProjectName);
+                                break;
+                            }
+                        }
+
                         var di2 = new DirectoryInfo(fullName).Parent;
 
                         dte.Solution.AddFromFile(Path.Combine(Path.Combine(di2.Parent.FullName, newDirectory), fname));
 
-                        // Save the complete solution.
-                        Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
+                        //// Save the complete solution.
+                        //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
 
                         //solution3.UpdateProjectFileLocationForUpgrade(di.FullName, Path.Combine(di.Parent.FullName, newDirectory));
 
@@ -202,6 +224,10 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                     //var dte = Package.GetGlobalService(typeof(SDTE)) as EnvDTE.DTE;
                     //dte.ExecuteCommand("Project.ReloadProject");
                     solution4.ReloadProject(projectGuid);
+
+                    // Save the complete solution.
+                    // Is this neccessarry?
+                    Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
                 }
 
                 //Solution.OnAfterRenameProject(selectedProject, selectedProject.Name, "bla", 0);
