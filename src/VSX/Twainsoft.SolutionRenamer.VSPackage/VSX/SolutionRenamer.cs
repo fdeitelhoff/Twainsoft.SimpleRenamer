@@ -111,7 +111,13 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 var directory = new DirectoryInfo(selectedProject.FullName).Parent.Name;
                 var solutionPath = selectedProject.DTE.Solution.FullName;
 
-                var bla = selectedProject.ParentProjectItem.Name;
+                SolutionFolder solutionFolder = null;
+
+                if (selectedProject.ParentProjectItem != null)
+                {
+                    var parentProject = selectedProject.ParentProjectItem.Collection.Parent as Project;
+                    solutionFolder = parentProject.Object as SolutionFolder;
+                }
 
                 selectedProject.Name = rename.GetProjectName();
 
@@ -164,28 +170,35 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                         var dte = Package.GetGlobalService(typeof(SDTE)) as EnvDTE80.DTE2;
 
-                        SolutionFolder sf;
+                        //SolutionFolder sf;
 
-                        foreach (Project proj in dte.Solution.Projects)
-                        {
-                            //System.Windows.Forms.MessageBox.Show(proj.Kind, " proj.Kind ");
+                        //foreach (Project proj in dte.Solution.Projects)
+                        //{
+                        //    //System.Windows.Forms.MessageBox.Show(proj.Kind, " proj.Kind ");
 
-                            //System.Windows.Forms.MessageBox.Show(proj.Name, " proj.Name ");
+                        //    //System.Windows.Forms.MessageBox.Show(proj.Name, " proj.Name ");
 
 
 
-                            if (proj.Kind == ProjectKinds.vsProjectKindSolutionFolder)
-                            {
+                        //    if (proj.Kind == ProjectKinds.vsProjectKindSolutionFolder)
+                        //    {
 
-                                sf = (SolutionFolder)proj.Object;
-                                //sf.AddFromTemplate(templateFile, destination, strProjectName);
-                                break;
-                            }
-                        }
+                        //        sf = (SolutionFolder)proj.Object;
+                        //        //sf.AddFromTemplate(templateFile, destination, strProjectName);
+                        //        break;
+                        //    }
+                        //}
 
                         var di2 = new DirectoryInfo(fullName).Parent;
 
-                        dte.Solution.AddFromFile(Path.Combine(Path.Combine(di2.Parent.FullName, newDirectory), fname));
+                        if (solutionFolder == null)
+                        {
+                            dte.Solution.AddFromFile(Path.Combine(Path.Combine(di2.Parent.FullName, newDirectory), fname));
+                        }
+                        else
+                        {
+                            solutionFolder.AddFromFile(Path.Combine(Path.Combine(di2.Parent.FullName, newDirectory), fname));
+                        }
 
                         //// Save the complete solution.
                         //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
