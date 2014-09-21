@@ -129,9 +129,9 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 Solution.GetProjectOfUniqueName(selectedProject.UniqueName, out unloadHierarchy);
 
                 // Save the complete solution.
-                Solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
+                //Solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
 
-                //// Save the renamed project.
+                // Save the renamed project.
                 //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, unloadHierarchy, 0);
 
                 //var projectType = Guid.Empty;
@@ -140,13 +140,16 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 //Solution.CreateProject(ref projectType, fullName, null, null, (uint)__VSCREATEPROJFLAGS.CPF_OPENFILE, ref projectIid,
                 //    out proj);
 
+                    // Activate COMExceptions to be thrown?
                 if (fileName == directory)
                 {
-                    var solution2 = Solution as IVsSolution2;
-                    var solution3 = Solution as IVsSolution3;
-                    var solution4 = Solution as IVsSolution4;
+                    //var solution2 = Solution as IVsSolution2;
+                    //var solution3 = Solution as IVsSolution3;
+                    //var solution4 = Solution as IVsSolution4;
                     //var workspace = MSBuildWorkspace.Create();
                     //var solution = workspace.OpenSolutionAsync(solutionPath).Result;
+
+                        //var defaultProject = selectedProject.is
 
                     // Unload the saved project.
                     //Solution.CloseSolutionElement((uint)__VSSLNCLOSEOPTIONS.SLNCLOSEOPT_UnloadProject, unloadHierarchy, 0);
@@ -159,10 +162,14 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                     //// Save the complete solution.
                     //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
 
+                    //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, unloadHierarchy, 0);
+
+                    Solution.CloseSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave | (uint)__VSSLNCLOSEOPTIONS.SLNCLOSEOPT_DeleteProject, unloadHierarchy, 0);
+
+                    //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
+
                     try
                     {
-                        Solution.CloseSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave | (uint)__VSSLNCLOSEOPTIONS.SLNCLOSEOPT_DeleteProject, unloadHierarchy, 0);
-
                         var di = new DirectoryInfo(fullName).Parent;
                         di.MoveTo(Path.Combine(di.Parent.FullName, newDirectory));
                         //solution3.UpdateProjectFileLocationForUpgrade(di.FullName, Path.Combine(di.Parent.FullName, newDirectory));
@@ -236,12 +243,14 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                     //var dte = Package.GetGlobalService(typeof(SDTE)) as EnvDTE.DTE;
                     //dte.ExecuteCommand("Project.ReloadProject");
-                    solution4.ReloadProject(projectGuid);
+                    //solution4.ReloadProject(projectGuid);
 
                     // Save the complete solution.
                     // Is this neccessarry?
-                    Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
+                    //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
                 }
+
+                Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
 
                 //Solution.OnAfterRenameProject(selectedProject, selectedProject.Name, "bla", 0);
 
