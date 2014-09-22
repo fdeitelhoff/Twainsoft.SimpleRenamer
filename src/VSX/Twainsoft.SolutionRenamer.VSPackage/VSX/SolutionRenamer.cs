@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using System.Windows.Markup;
 using EnvDTE;
 using EnvDTE80;
 using Microsoft.CodeAnalysis.MSBuild;
@@ -71,7 +72,9 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
             var result = rename.ShowDialog();
             if (result.HasValue && result.Value)
             {
-                var Solution = GetGlobalService(typeof (IVsSolution)) as IVsSolution;
+                var solution = GetGlobalService(typeof (IVsSolution)) as IVsSolution;
+
+                solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
 
                 IntPtr hierarchyPointer, selectionContainerPointer;
                 Object selectedObject = null;
@@ -102,14 +105,14 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 Project selectedProject = selectedObject as Project;
 
                 IVsHierarchy projHierarchy;
-                Solution.GetProjectOfUniqueName(selectedProject.UniqueName, out projHierarchy);
+                solution.GetProjectOfUniqueName(selectedProject.UniqueName, out projHierarchy);
 
                 var projectGuid = Guid.Empty;
-                Solution.GetGuidOfProject(projHierarchy, out projectGuid);
+                solution.GetGuidOfProject(projHierarchy, out projectGuid);
 
                 var fileName = Path.GetFileNameWithoutExtension(selectedProject.FileName);
                 var directory = new DirectoryInfo(selectedProject.FullName).Parent.Name;
-                var solutionPath = selectedProject.DTE.Solution.FullName;
+                //var solutionPath = selectedProject.DTE.Solution.FullName;
 
                 SolutionFolder solutionFolder = null;
 
@@ -119,14 +122,15 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                     solutionFolder = parentProject.Object as SolutionFolder;
                 }
 
-                selectedProject.Name = rename.GetProjectName();
+                var newProjectName = rename.GetProjectName();
+                selectedProject.Name = newProjectName;
 
                 var fname = Path.GetFileName(selectedProject.FileName);
                 var fullName = selectedProject.FullName;
                 var newDirectory = Path.GetFileNameWithoutExtension(selectedProject.FileName);
 
                 IVsHierarchy unloadHierarchy;
-                Solution.GetProjectOfUniqueName(selectedProject.UniqueName, out unloadHierarchy);
+                solution.GetProjectOfUniqueName(selectedProject.UniqueName, out unloadHierarchy);
 
                 // Save the complete solution.
                 //Solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
@@ -140,7 +144,9 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 //Solution.CreateProject(ref projectType, fullName, null, null, (uint)__VSCREATEPROJFLAGS.CPF_OPENFILE, ref projectIid,
                 //    out proj);
 
-                    // Activate COMExceptions to be thrown?
+                // Activate COMExceptions to be thrown?
+                var newProject = selectedProject;
+
                 if (fileName == directory)
                 {
                     //var solution2 = Solution as IVsSolution2;
@@ -164,10 +170,10 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                     //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, unloadHierarchy, 0);
 
-                    Solution.CloseSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave | (uint)__VSSLNCLOSEOPTIONS.SLNCLOSEOPT_DeleteProject, unloadHierarchy, 0);
+                    solution.CloseSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave | (uint)__VSSLNCLOSEOPTIONS.SLNCLOSEOPT_DeleteProject, unloadHierarchy, 0);
 
-                    //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
-
+                    solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
+                    
                     try
                     {
                         var di = new DirectoryInfo(fullName).Parent;
@@ -200,11 +206,11 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                         if (solutionFolder == null)
                         {
-                            dte.Solution.AddFromFile(Path.Combine(Path.Combine(di2.Parent.FullName, newDirectory), fname));
+                            newProject = dte.Solution.AddFromFile(Path.Combine(Path.Combine(di2.Parent.FullName, newDirectory), fname));
                         }
                         else
                         {
-                            solutionFolder.AddFromFile(Path.Combine(Path.Combine(di2.Parent.FullName, newDirectory), fname));
+                            newProject = solutionFolder.AddFromFile(Path.Combine(Path.Combine(di2.Parent.FullName, newDirectory), fname));
                         }
 
                         //// Save the complete solution.
@@ -233,6 +239,8 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                         //    //File.WriteAllText(solutionPath, contents);
 
                         //}
+
+                        solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
                     }
                     catch (Exception e2)
                     {
@@ -250,7 +258,37 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                     //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
                 }
 
-                Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
+                //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
+
+                foreach (Property property in newProject.Properties)
+                {
+                    try
+                    {
+                        Debug.WriteLine(property.Name + " " + property.Value);
+                    }
+                    catch (Exception ex3)
+                    {
+                        Debug.WriteLine(ex3);
+                    }
+
+                }
+
+                var defaultNamespace = newProject.Properties.Item("DefaultNamespace") as Property;
+                var assemblyName = newProject.Properties.Item("AssemblyName") as Property;
+
+                if (defaultNamespace.Value.ToString().Contains(fname))
+                {
+                    defaultNamespace.Value = newProjectName;
+                }
+
+                if (assemblyName.Value.ToString().Contains(fname))
+                {
+                    assemblyName.Value = newProjectName;
+                }
+
+                // Maybe this will work? Should I use this flag whenever I want to save the project?
+                // Is there another similar flag for solutions? If it exists should I use it to check if I should save the solution?
+                //newProject.IsDirty
 
                 //Solution.OnAfterRenameProject(selectedProject, selectedProject.Name, "bla", 0);
 
