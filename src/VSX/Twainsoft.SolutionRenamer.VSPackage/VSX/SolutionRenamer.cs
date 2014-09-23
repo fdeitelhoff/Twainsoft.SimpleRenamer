@@ -73,8 +73,16 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
             if (result.HasValue && result.Value)
             {
                 var solution = GetGlobalService(typeof (IVsSolution)) as IVsSolution;
+                var dte = Package.GetGlobalService(typeof(SDTE)) as DTE2;
 
-                solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
+                //var solution4 = solution as EnvDTE100.Solution4;
+
+                //solution.GetProperty(__VSPROPID.VSPROPID_IsSolutionDirty)
+
+                if (dte.Solution.IsDirty)
+                {
+                    solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
+                }
 
                 IntPtr hierarchyPointer, selectionContainerPointer;
                 Object selectedObject = null;
@@ -121,6 +129,8 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                     var parentProject = selectedProject.ParentProjectItem.Collection.Parent as Project;
                     solutionFolder = parentProject.Object as SolutionFolder;
                 }
+
+                var oldProjectName = selectedProject.Name;
 
                 var newProjectName = rename.GetProjectName();
                 selectedProject.Name = newProjectName;
@@ -172,6 +182,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                     solution.CloseSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave | (uint)__VSSLNCLOSEOPTIONS.SLNCLOSEOPT_DeleteProject, unloadHierarchy, 0);
 
+                    // Use the IsDirty flag when this gets outsorced within a new method.
                     solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
                     
                     try
@@ -181,7 +192,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                         //solution3.UpdateProjectFileLocationForUpgrade(di.FullName, Path.Combine(di.Parent.FullName, newDirectory));
                         //solution2.UpdateProjectFileLocation(unloadHierarchy);
 
-                        var dte = Package.GetGlobalService(typeof(SDTE)) as EnvDTE80.DTE2;
+                        
 
                         //SolutionFolder sf;
 
@@ -240,6 +251,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                         //}
 
+                        // Use the IsDirty flag when this gets outsorced within a new method.
                         solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
                     }
                     catch (Exception e2)
@@ -260,35 +272,55 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                 //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
 
-                foreach (Property property in newProject.Properties)
-                {
-                    try
-                    {
-                        Debug.WriteLine(property.Name + " " + property.Value);
-                    }
-                    catch (Exception ex3)
-                    {
-                        Debug.WriteLine(ex3);
-                    }
+                //foreach (Property property in newProject.Properties)
+                //{
+                //    try
+                //    {
+                //        Debug.WriteLine(property.Name + " " + property.Value);
+                //    }
+                //    catch (Exception ex3)
+                //    {
+                //        Debug.WriteLine(ex3);
+                //    }
 
-                }
+                //}
 
+                //foreach (Property property in solution.GetProperty(__VSPROPID.VSPROPID_IsSolutionDirty))
+                //{
+                //    try
+                //    {
+                //        Debug.WriteLine(property.Name + " " + property.Value);
+                //    }
+                //    catch (Exception ex3)
+                //    {
+                //        Debug.WriteLine(ex3);
+                //    }
+
+                //}
+
+                IVsHierarchy newProjectHierarchy;
+                solution.GetProjectOfUniqueName(newProject.UniqueName, out newProjectHierarchy);
+
+                // Changing the default namespace and the assembly name.
                 var defaultNamespace = newProject.Properties.Item("DefaultNamespace") as Property;
                 var assemblyName = newProject.Properties.Item("AssemblyName") as Property;
 
-                if (defaultNamespace.Value.ToString().Contains(fname))
+                if (defaultNamespace.Value.ToString().Contains(oldProjectName))
                 {
-                    defaultNamespace.Value = newProjectName;
+                    defaultNamespace.Value = defaultNamespace.Value.ToString().Replace(oldProjectName, newProjectName);
                 }
 
-                if (assemblyName.Value.ToString().Contains(fname))
+                if (assemblyName.Value.ToString().Contains(oldProjectName))
                 {
-                    assemblyName.Value = newProjectName;
+                    assemblyName.Value = assemblyName.Value.ToString().Replace(oldProjectName, newProjectName);
                 }
 
                 // Maybe this will work? Should I use this flag whenever I want to save the project?
                 // Is there another similar flag for solutions? If it exists should I use it to check if I should save the solution?
-                //newProject.IsDirty
+                if (newProject.IsDirty)
+                {
+                    solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, newProjectHierarchy, 0);
+                }
 
                 //Solution.OnAfterRenameProject(selectedProject, selectedProject.Name, "bla", 0);
 
