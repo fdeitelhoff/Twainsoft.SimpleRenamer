@@ -130,6 +130,9 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                     solutionFolder = parentProject.Object as SolutionFolder;
                 }
 
+                // Another try for the mighty AccessViolation:
+                // Remove the project first and then rename it? Is this possible or will we get an project is not available then?
+
                 var oldProjectName = selectedProject.Name;
 
                 var newProjectName = rename.GetProjectName();
@@ -156,6 +159,9 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                 // Activate COMExceptions to be thrown?
                 var newProject = selectedProject;
+
+                // Maybe here or just in case the directory gets renamed:
+                // Check if other projects depend on the renamed one. In this case we must collect those references and change them after the renaming process is finished.
 
                 if (fileName == directory)
                 {
@@ -191,8 +197,6 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                         di.MoveTo(Path.Combine(di.Parent.FullName, newDirectory));
                         //solution3.UpdateProjectFileLocationForUpgrade(di.FullName, Path.Combine(di.Parent.FullName, newDirectory));
                         //solution2.UpdateProjectFileLocation(unloadHierarchy);
-
-                        
 
                         //SolutionFolder sf;
 
@@ -321,6 +325,47 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 {
                     solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, newProjectHierarchy, 0);
                 }
+
+                // Change some info in the AssemblyInfo.cs file!
+                var bla = newProject.ProjectItems.Item("Properties");
+                var ai = bla.ProjectItems.Item("AssemblyInfo.cs");
+
+                var at = ai.FileCodeModel.CodeElements.Item("AssemblyTitle") as CodeAttribute2;
+                var assemblyProduct = ai.FileCodeModel.CodeElements.Item("AssemblyProduct") as CodeAttribute2;
+
+                if (at.Value.Contains(oldProjectName))
+                {
+                    at.Value = at.Value.Replace(oldProjectName, newProjectName);
+                }
+
+                if (assemblyProduct.Value.Contains(oldProjectName))
+                {
+                    assemblyProduct.Value = assemblyProduct.Value.Replace(oldProjectName, newProjectName);
+                }
+
+                if (ai.IsDirty)
+                {
+                    solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, newProjectHierarchy, 0);
+                }
+
+                //foreach (CodeElement codeElement in ai.FileCodeModel.CodeElements)
+                //{
+                //    try
+                //    {
+                //        Debug.WriteLine(codeElement.Name + " " + codeElement.Kind);
+                //    }
+                //    catch (Exception ex4)
+                //    {
+                //        Debug.WriteLine(ex4);
+                //    }
+                //}
+
+                // Get Access to the AssemblyInfo.cs to change some other stuff.
+                // Properties {6BB5F8EF-4483-11D3-8BCF-00C04F8EC28C}
+                //foreach (ProjectItem projectItem in newProject.ProjectItems)
+                //{
+                //    Debug.WriteLine(projectItem.Name + " " + projectItem.Kind);
+                //}
 
                 //Solution.OnAfterRenameProject(selectedProject, selectedProject.Name, "bla", 0);
 
