@@ -12,6 +12,8 @@ using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Twainsoft.SolutionRenamer.VSPackage.GUI;
+using VSLangProj110;
+using VSLangProj80;
 
 namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 {
@@ -160,18 +162,36 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 // Activate COMExceptions to be thrown?
                 var newProject = selectedProject;
 
-                // Maybe here or just in case the directory gets renamed:
-                // Check if other projects depend on the renamed one. In this case we must collect those references and change them after the renaming process is finished.
-
                 if (fileName == directory)
                 {
+                    // Maybe here or just in case the directory gets renamed:
+                    // Check if other projects depend on the renamed one. In this case we must collect those references and change them after the renaming process is finished.
+                    // First it's implemented here! If this use case is relevant for the normal project renaming too, I'll move the code outside the if statement.
+
+                    //var bla2 = dte.Solution.Projects.Item("CA1");
+                    // Get the references projects ands dlls of the currently renamed project.
+                    var project = newProject.Object as VSProject2;
+
+                    var references = project.References as References2;
+
+                    foreach (Reference5 reference in references)
+                    {
+                        Debug.WriteLine(reference.Name + " " + reference.Path);
+                    }
+
+                    //      If TypeOf objProject.Object Is VSLangProj.VSProject Then
+
+                    //objVSProject = DirectCast(objProject.Object, VSLangProj.VSProject)
+                    //newProject.Object as VSLangProj.SVsProjectItem
+                    
+
                     //var solution2 = Solution as IVsSolution2;
                     //var solution3 = Solution as IVsSolution3;
                     //var solution4 = Solution as IVsSolution4;
                     //var workspace = MSBuildWorkspace.Create();
                     //var solution = workspace.OpenSolutionAsync(solutionPath).Result;
 
-                        //var defaultProject = selectedProject.is
+                    //var defaultProject = selectedProject.is
 
                     // Unload the saved project.
                     //Solution.CloseSolutionElement((uint)__VSSLNCLOSEOPTIONS.SLNCLOSEOPT_UnloadProject, unloadHierarchy, 0);
