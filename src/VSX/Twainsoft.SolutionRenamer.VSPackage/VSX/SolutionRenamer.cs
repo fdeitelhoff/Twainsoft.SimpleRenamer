@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.IO;
@@ -137,6 +138,10 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 // Remove the project first and then rename it? Is this possible or will we get an project is not available then?
 
                 var oldProjectName = selectedProject.Name;
+                // This is a little bit scary: I need the old project path, before it gets moved. But this instance will have the new name after it gets renamed.
+                // Change this behaviour!
+                OldProject = selectedProject;
+                OldProjectName = oldProjectName;
 
                 var newProjectName = rename.GetProjectName();
                 selectedProject.Name = newProjectName;
@@ -179,7 +184,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                     //    Debug.WriteLine(reference.Name + " " + reference.Path);
                     //}
 
-                    CheckProjectReferences(dte, newProject);
+                    CheckProjects(dte, newProject);
 
                     //      If TypeOf objProject.Object Is VSLangProj.VSProject Then
 
@@ -407,24 +412,86 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
             }
         }
 
-        private static void CheckProjectReferences(DTE2 dte, Project newProject)
+        // There are events for references added, removed and changed. Maybe this is useful in the future?
+        private void CheckProjects(DTE2 dte, Project newProject)
         {
+            NewProjectName = newProject.Name;
+            ProjectsWithReferences = new List<Project>();
+
             foreach (Project proj in dte.Solution.Projects)
             {
                 // Better way of checking the GUID. Maybe invert the equals check? Just now, we want to exclude solution folders.
                 // This is not recusive. We need all projects of any depth. So we need to search projects recursively within solution folders.
-                if (proj.Name != newProject.Name && proj.Kind == "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}")
-                {
-                    Debug.WriteLine("Projekt: " + proj.Name);
+                //if (proj.Name != newProject.Name && proj.Kind == "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}")
+                //{
+                    NavigateProject(proj);
                     
-                    var project = proj.Object as VSProject2;
+                    //var project = proj.Object as VSProject2;
                     
-                    var references = project.References as References2;
+                    //var references = project.References as References2;
 
-                    foreach (Reference5 reference in references)
+                    //foreach (Reference5 reference in references)
+                    //{
+                    //    Debug.WriteLine(reference.Name + " " + reference.Path);
+                    //}
+                //}
+            }
+
+
+        }
+
+        // Maybe this is doable in another way? This private field is used for data just for the navigate project code. Looks a little bit ugly.
+        private string NewProjectName;
+        private Project OldProject;
+        private string OldProjectName;
+        private List<Project> ProjectsWithReferences;
+
+        private void NavigateProject(Project project)
+        {
+            if (project.Name != NewProjectName)
+            {
+                if (project.Kind == "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}")
+                {
+                    Debug.WriteLine("Projekt: " + project.Name);
+
+                    CheckProjectReferences(project);
+                }
+
+                // We need to navigate all found project items. There could be a solution folder with some projects within.
+                NavigateProjectItems(project.ProjectItems);
+            }
+        }
+
+        private void NavigateProjectItems(ProjectItems projectItems)
+        {
+            if (projectItems != null)
+            {
+                foreach (ProjectItem projectItem in projectItems)
+                {
+                    if (projectItem.SubProject != null)
                     {
-                        Debug.WriteLine(reference.Name + " " + reference.Path);
+                        NavigateProject(projectItem.SubProject);
                     }
+                }
+            }
+        }
+
+        private void CheckProjectReferences(Project proj)
+        {
+            var project = proj.Object as VSProject2;
+
+            var references = project.References as References2;
+
+            foreach (Reference5 reference in references)
+            {
+                // OldProjectName seems to be the new one!
+                // The references path is the dll in the debug folder. That cannot be compared easily.
+                // Maybe SourceProject.FullName is better? Try it out in the next episode...
+                if (reference.Name == OldProjectName && reference.SourceProject.FullName == OldProject.FullName)
+                {
+                    Debug.WriteLine(reference.Name + " " + reference.Path);
+
+                    ProjectsWithReferences.Add(proj);
                 }
             }
         }
