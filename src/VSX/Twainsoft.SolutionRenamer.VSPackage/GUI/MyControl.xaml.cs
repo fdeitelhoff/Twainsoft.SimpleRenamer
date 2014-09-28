@@ -1,4 +1,6 @@
-﻿using System.Windows;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace Twainsoft.SolutionRenamer.VSPackage.GUI
@@ -13,10 +15,10 @@ namespace Twainsoft.SolutionRenamer.VSPackage.GUI
             InitializeComponent();
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1300:SpecifyMessageBoxOptions")]
+        [SuppressMessage("Microsoft.Globalization", "CA1300:SpecifyMessageBoxOptions")]
         private void button1_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show(string.Format(System.Globalization.CultureInfo.CurrentUICulture, "We are inside {0}.button1_Click()", this.ToString()),
+            MessageBox.Show(string.Format(CultureInfo.CurrentUICulture, "We are inside {0}.button1_Click()", ToString()),
                             "My Tool Window");
 
         }

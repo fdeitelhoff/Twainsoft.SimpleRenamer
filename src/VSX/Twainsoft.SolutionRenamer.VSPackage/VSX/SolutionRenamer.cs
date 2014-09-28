@@ -77,7 +77,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
             if (result.HasValue && result.Value)
             {
                 var solution = GetGlobalService(typeof (IVsSolution)) as IVsSolution;
-                var dte = Package.GetGlobalService(typeof(SDTE)) as DTE2;
+                var dte = GetGlobalService(typeof(SDTE)) as DTE2;
 
                 //var solution4 = solution as EnvDTE100.Solution4;
 
@@ -94,7 +94,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 uint projectItemId;
 
                 IVsMonitorSelection monitorSelection =
-                    (IVsMonitorSelection) Package.GetGlobalService(
+                    (IVsMonitorSelection) GetGlobalService(
                         typeof (SVsShellMonitorSelection));
 
                 monitorSelection.GetCurrentSelection(out hierarchyPointer,
@@ -134,6 +134,10 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                     solutionFolder = parentProject.Object as SolutionFolder;
                 }
 
+                // Get the startup project and set it again after this project gets deleted.
+                var startupProjects = dte.Solution.SolutionBuild.StartupProjects as Array;
+                var startupName = startupProjects.GetValue(0);
+
                 // Another try for the mighty AccessViolation:
                 // Remove the project first and then rename it? Is this possible or will we get an project is not available then?
 
@@ -170,8 +174,9 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                 if (fileName == directory)
                 {
-                    // Maybe here or just in case the directory gets renamed:                    // Check if other projects depend on the renamed one. In this case we must collect those references and change them after the renaming process is finished.
-                                                                                                 // First it's implemented here! If this use case is relevant for the normal project renaming too, I'll move the code outside the if statement.
+                    // Maybe here or just in case the directory gets renamed:                   
+                    // Check if other projects depend on the renamed one. In this case we must collect those references and change them after the renaming process is finished.
+                    // First it's implemented here! If this use case is relevant for the normal project renaming too, I'll move the code outside the if statement.
 
                     //var bla2 = dte.Solution.Projects.Item("CA1");
                     // Get the references projects ands dlls of the currently renamed project.
@@ -329,6 +334,19 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                 //}
 
+                // Now we want to add lost project references due to the name change.
+                foreach (Project proj in ProjectsWithReferences)
+                {
+                    var project = proj.Object as VSProject2;
+
+                    var references = project.References as References2;
+
+                    references.AddProject(newProject);
+
+                    // Better this way?
+                    //dte.Solution.SolutionBuild.BuildProject();
+                }
+
                 IVsHierarchy newProjectHierarchy;
                 solution.GetProjectOfUniqueName(newProject.UniqueName, out newProjectHierarchy);
 
@@ -374,6 +392,8 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 {
                     solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, newProjectHierarchy, 0);
                 }
+
+                dte.Solution.SolutionBuild.Build();
 
                 //foreach (CodeElement codeElement in ai.FileCodeModel.CodeElements)
                 //{
@@ -487,9 +507,9 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 // OldProjectName seems to be the new one!
                 // The references path is the dll in the debug folder. That cannot be compared easily.
                 // Maybe SourceProject.FullName is better? Try it out in the next episode...
-                if (reference.Name == OldProjectName && reference.SourceProject.FullName == OldProject.FullName)
+                if (reference.SourceProject != null && reference.Name == NewProjectName && reference.SourceProject.FullName == OldProject.FullName)
                 {
-                    Debug.WriteLine(reference.Name + " " + reference.Path);
+                    //Debug.WriteLine(reference.Name + " " + reference.Path);
 
                     ProjectsWithReferences.Add(proj);
                 }
