@@ -135,8 +135,10 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 }
 
                 // Get the startup project and set it again after this project gets deleted.
+                // this uses the UniqueName of the project!
                 var startupProjects = dte.Solution.SolutionBuild.StartupProjects as Array;
-                var startupName = startupProjects.GetValue(0);
+                var startupName = startupProjects.GetValue(0).ToString();
+                var isStartupProject = startupName == selectedProject.UniqueName;
 
                 // Another try for the mighty AccessViolation:
                 // Remove the project first and then rename it? Is this possible or will we get an project is not available then?
@@ -391,6 +393,12 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 if (ai.IsDirty)
                 {
                     solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, newProjectHierarchy, 0);
+                }
+
+                if (isStartupProject)
+                {
+                    //var startupProjects = dte.Solution.SolutionBuild.StartupProjects as Array;
+                    startupProjects.SetValue(newProject.UniqueName, 0);
                 }
 
                 dte.Solution.SolutionBuild.Build();
