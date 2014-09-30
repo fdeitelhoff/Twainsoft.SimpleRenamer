@@ -225,6 +225,9 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                     // Use the IsDirty flag when this gets outsorced within a new method.
                     solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
 
+                    //A numeric comparison was attempted on "$(TargetPlatformVersion)" that evaluates to "" instead of a number, in condition "'$(TargetPlatformVersion)' > '8.0'". 
+                    // C:\Program Files (x86)\MSBuild\12.0\bin\Microsoft.Common.CurrentVersion.targets
+                    // Where the hell is this gonna come from?
                     try
                     {
                         var di = new DirectoryInfo(fullName).Parent;
@@ -399,6 +402,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 {
                     //var startupProjects = dte.Solution.SolutionBuild.StartupProjects as Array;
                     startupProjects.SetValue(newProject.UniqueName, 0);
+                    //dte.Solution.SolutionBuild.StartupProjects
                 }
 
                 dte.Solution.SolutionBuild.Build();
