@@ -76,6 +76,8 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
             var result = rename.ShowDialog();
             if (result.HasValue && result.Value)
             {
+                ProjectsWithReferences = new List<Project>();
+
                 var solution = GetGlobalService(typeof (IVsSolution)) as IVsSolution;
                 var dte = GetGlobalService(typeof(SDTE)) as DTE2;
 
@@ -93,7 +95,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 IVsMultiItemSelect multiItemSelect;
                 uint projectItemId;
 
-                IVsMonitorSelection monitorSelection =
+                var monitorSelection =
                     (IVsMonitorSelection) GetGlobalService(
                         typeof (SVsShellMonitorSelection));
 
@@ -102,7 +104,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                     out multiItemSelect,
                     out selectionContainerPointer);
 
-                IVsHierarchy selectedHierarchy = Marshal.GetTypedObjectForIUnknown(
+                var selectedHierarchy = Marshal.GetTypedObjectForIUnknown(
                     hierarchyPointer,
                     typeof (IVsHierarchy)) as IVsHierarchy;
 
@@ -114,7 +116,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                         out selectedObject));
                 }
 
-                Project selectedProject = selectedObject as Project;
+                var selectedProject = selectedObject as Project;
 
                 IVsHierarchy projHierarchy;
                 solution.GetProjectOfUniqueName(selectedProject.UniqueName, out projHierarchy);
@@ -220,12 +222,12 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                     //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, unloadHierarchy, 0);
 
-                    solution.CloseSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave | (uint)__VSSLNCLOSEOPTIONS.SLNCLOSEOPT_DeleteProject, unloadHierarchy, 0);
+                    var r = solution.CloseSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave | (uint)__VSSLNCLOSEOPTIONS.SLNCLOSEOPT_DeleteProject, unloadHierarchy, 0);
 
                     // Use the IsDirty flag when this gets outsorced within a new method.
                     solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
 
-                    //A numeric comparison was attempted on "$(TargetPlatformVersion)" that evaluates to "" instead of a number, in condition "'$(TargetPlatformVersion)' > '8.0'". 
+                    // A numeric comparison was attempted on "$(TargetPlatformVersion)" that evaluates to "" instead of a number, in condition "'$(TargetPlatformVersion)' > '8.0'". 
                     // C:\Program Files (x86)\MSBuild\12.0\bin\Microsoft.Common.CurrentVersion.targets
                     // Where the hell is this gonna come from?
                     try
@@ -340,7 +342,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 //}
 
                 // Now we want to add lost project references due to the name change.
-                foreach (Project proj in ProjectsWithReferences)
+                foreach (var proj in ProjectsWithReferences)
                 {
                     var project = proj.Object as VSProject2;
 
@@ -448,7 +450,6 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
         private void CheckProjects(DTE2 dte, Project newProject)
         {
             NewProjectName = newProject.Name;
-            ProjectsWithReferences = new List<Project>();
 
             foreach (Project proj in dte.Solution.Projects)
             {
