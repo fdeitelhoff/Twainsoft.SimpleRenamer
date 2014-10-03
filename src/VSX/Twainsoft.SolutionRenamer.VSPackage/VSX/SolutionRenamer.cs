@@ -419,17 +419,19 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                         //startupProjects.SetValue(newProject.UniqueName, 0);
                         //dte.Solution.SolutionBuild.StartupProjects
 
-// ReSharper disable UseArrayCreationExpression.1
-                        var newStartUpProjects = Array.CreateInstance(typeof (object), 1);
-// ReSharper restore UseArrayCreationExpression.1
-                        newStartUpProjects.SetValue(newProject.UniqueName, 0);
+//// ReSharper disable UseArrayCreationExpression.1
+//                        var newStartUpProjects = Array.CreateInstance(typeof (object), 1);
+//// ReSharper restore UseArrayCreationExpression.1
+//                        newStartUpProjects.SetValue(newProject.UniqueName, 0);
 
-                        dte.Solution.SolutionBuild.StartupProjects = newStartUpProjects;
+//                        dte.Solution.SolutionBuild.StartupProjects = newStartUpProjects;
 
                         //if (dte.Solution.IsDirty)
                         //{
                         //    solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
                         //}
+
+                        dte.Solution.Properties.Item("StartupProject").Value = newProject.Name;
                     }
 
                     dte.Solution.SolutionBuild.Build();
