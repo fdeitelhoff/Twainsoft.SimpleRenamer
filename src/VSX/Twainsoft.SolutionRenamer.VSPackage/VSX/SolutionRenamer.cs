@@ -236,8 +236,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                         // A numeric comparison was attempted on "$(TargetPlatformVersion)" that evaluates to "" instead of a number, in condition "'$(TargetPlatformVersion)' > '8.0'". 
                         // C:\Program Files (x86)\MSBuild\12.0\bin\Microsoft.Common.CurrentVersion.targets
                         // Where the hell is this gonna come from?
-                        try
-                        {
+                   
                             var di = new DirectoryInfo(fullName).Parent;
                             di.MoveTo(Path.Combine(di.Parent.FullName, newDirectory));
                             //solution3.UpdateProjectFileLocationForUpgrade(di.FullName, Path.Combine(di.Parent.FullName, newDirectory));
@@ -306,12 +305,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                             // Use the IsDirty flag when this gets outsorced within a new method.
                             solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
-                        }
-                        catch (Exception e2)
-                        {
-                            Debug.WriteLine(e2);
-                        }
-
+                        
                         //new DirectoryInfo(selectedProject.FullName).Parent.MoveTo();
 
                         //var dte = Package.GetGlobalService(typeof(SDTE)) as EnvDTE.DTE;
@@ -432,6 +426,17 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                         //}
 
                         dte.Solution.Properties.Item("StartupProject").Value = newProject.Name;
+
+                        UIHierarchy UIH = dte.ToolWindows.SolutionExplorer;
+
+                        //UIH.GetItem(@"ConsoleApplication4\SolutionFolder\ClassLibraryNeu1")
+                        UIHierarchyItem UIHItem = UIH.GetItem(newProject.Name);
+
+                        UIHItem.Select(vsUISelectionType.vsUISelectionTypeSetCaret);
+
+                        UIHItem.UIHierarchyItems.Expanded = true;
+
+                        UIHItem.Select(vsUISelectionType.vsUISelectionTypeSelect);
                     }
 
                     dte.Solution.SolutionBuild.Build();
@@ -474,6 +479,10 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 catch (COMException comException)
                 {
                     Debug.WriteLine(comException);
+                }
+                catch (Exception e2)
+                {
+                    Debug.WriteLine(e2);
                 }
             }
         }
