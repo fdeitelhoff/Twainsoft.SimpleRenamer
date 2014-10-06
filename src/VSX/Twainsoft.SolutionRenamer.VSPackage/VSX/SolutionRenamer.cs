@@ -52,15 +52,16 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
         private void OnRenameProject(object sender, EventArgs e)
         {
-            var selectedProject = GetSelectedProject();
-
-            var rename = new RenameProjectDialog(selectedProject.Name);
-            var result = rename.ShowDialog();
-            if (!result.HasValue || !result.Value)
+            try
             {
-                return;
-            }
+                var selectedProject = GetSelectedProject();
 
+                var rename = new RenameProjectDialog(selectedProject.Name);
+                var result = rename.ShowDialog();
+                if (!result.HasValue || !result.Value)
+                {
+                    return;
+                }
 
                 ProjectsWithReferences = new List<Project>();
 
@@ -133,8 +134,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                 // Activate COMExceptions to be thrown?
                 var newProject = selectedProject;
-            try
-            {
+
                 if (fileName == directory)
                 {
                     // Maybe here or just in case the directory gets renamed:                   
@@ -181,13 +181,13 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                     //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, unloadHierarchy, 0);
 
-                    //var r =
-                    //    solution.CloseSolutionElement(
-                    //        (uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave |
-                    //        (uint) __VSSLNCLOSEOPTIONS.SLNCLOSEOPT_DeleteProject, unloadHierarchy, 0);
+                    // Remove the project from the solution file!
+                    solution.CloseSolutionElement(
+                        (uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave |
+                        (uint) __VSSLNCLOSEOPTIONS.SLNCLOSEOPT_DeleteProject, unloadHierarchy, 0);
 
                     // Use the IsDirty flag when this gets outsorced within a new method.
-                    solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
+                    //solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
 
                     // A numeric comparison was attempted on "$(TargetPlatformVersion)" that evaluates to "" instead of a number, in condition "'$(TargetPlatformVersion)' > '8.0'". 
                     // C:\Program Files (x86)\MSBuild\12.0\bin\Microsoft.Common.CurrentVersion.targets
@@ -272,16 +272,8 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                     // Is this neccessarry?
                     //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
                 }
-            }
-            catch (COMException comException)
-            {
-                Debug.WriteLine(comException);
-            }
-            catch (Exception e2)
-            {
-                Debug.WriteLine(e2);
-            }
-            //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
+
+                //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
 
                 //foreach (Property property in newProject.Properties)
                 //{
@@ -440,6 +432,16 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 //var hierarchy = SolutionEventsHandler.hier;
 
                 //Solution.CloseSolutionElement((uint)__VSSLNCLOSEOPTIONS.SLNCLOSEOPT_UnloadProject, hierarchy, 0);
+            }
+            catch (COMException comException)
+            {
+                Debug.WriteLine(comException);
+            }
+            // Just as a fail safe senario! Should be remove in future versions.
+            catch (Exception exception)
+            {
+                Debug.WriteLine(exception);
+            }
         }
 
         private Project GetSelectedProject()
