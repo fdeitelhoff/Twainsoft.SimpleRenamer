@@ -181,6 +181,10 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                     //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, unloadHierarchy, 0);
 
+                    object isExpanded = false;
+                    ErrorHandler.ThrowOnFailure(unloadHierarchy.GetProperty(projectItemId,
+                        (int)__VSHPROPID.VSHPROPID_Expanded, out isExpanded));
+
                     // Remove the project from the solution file!
                     solution.CloseSolutionElement(
                         (uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave |
@@ -258,6 +262,12 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                     //    //File.WriteAllText(solutionPath, contents);
 
                     //}
+
+                    if (Convert.ToBoolean(isExpanded))
+                    {
+                        ErrorHandler.ThrowOnFailure(unloadHierarchy.SetProperty(VSConstants.VSITEMID_ROOT,
+                            (int)__VSHPROPID.VSHPROPID_Expanded, true));
+                    }
 
                     // Use the IsDirty flag when this gets outsorced within a new method.
                     solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
@@ -394,6 +404,9 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                     //UIHItem.UIHierarchyItems.Expanded = true;
 
                     //UIHItem.Select(vsUISelectionType.vsUISelectionTypeSelect);
+
+
+
                 }
 
                 dte.Solution.SolutionBuild.Build();
@@ -443,13 +456,13 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 Debug.WriteLine(exception);
             }
         }
-
+        uint projectItemId;
         private Project GetSelectedProject()
         {
             IntPtr hierarchyPointer, selectionContainerPointer;
             object selectedObject = null;
             IVsMultiItemSelect multiItemSelect;
-            uint projectItemId;
+            
 
             var monitorSelection =
                 (IVsMonitorSelection)GetGlobalService(
