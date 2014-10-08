@@ -18,44 +18,40 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
     [PackageRegistration(UseManagedResourcesOnly = true)]
     [InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
-    [Guid(GuidList.guidTwainsoft_SolutionRenamer_VSPackagePkgString)]
+    [Guid(GuidList.SolutionRenamerVsPackagePkgString)]
     [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExists_string)]
     public sealed class SolutionRenamer : Package
     {
+        public IVsSolution Solution { get; set; }
+        public DTE2 Dte { get; set; }
+
         protected override void Initialize()
         {
             base.Initialize();
 
-            // Add our command handlers for menu (commands must exist in the .vsct file)
             var mcs = GetService(typeof(IMenuCommandService)) as OleMenuCommandService;
-            if ( null != mcs )
+            if (mcs == null)
             {
-                // Create the command for the menu item.
-                //var menuCommandID = new CommandID(GuidList.guidTwainsoft_SolutionRenamer_VSPackageCmdSet, (int)PkgCmdIDList.cmdidMyCommand);
-                //MenuCommand menuItem = new MenuCommand(MenuItemCallback, menuCommandID );
-                //mcs.AddCommand( menuItem );
-                // Create the command for the tool window
-                var toolwndCommandID = new CommandID(GuidList.guidTwainsoft_SolutionRenamer_VSPackageCmdSet, (int)PkgCmdIDList.cmdidMyTool);
-                var menuToolWin = new MenuCommand(OnRenameProject, toolwndCommandID);
-                mcs.AddCommand( menuToolWin );
+                return;
             }
 
-            //var solution = GetGlobalService(typeof(IVsSolution)) as IVsSolution;
-            //Solution = solution;
-            //SolutionEventsHandler = new SolutionEventsHandler(solution);
+            var contextMenuCommandId = new CommandID(GuidList.SolutionRenamerVsPackageCmdSet, (int)PkgCmdIdList.ContextMenuCommandId);
+            var contextMenu = new MenuCommand(OnRenameProject, contextMenuCommandId);
+            mcs.AddCommand(contextMenu);
 
-            //solution.AdviseSolutionEvents(SolutionEventsHandler, out SolutionEventsHandler.EventsCookie);
-            //Dte2 = Package.GetGlobalService(typeof(SDTE)) as EnvDTE.DTE;
-            //Dte2.Events.SolutionEvents.ProjectRenamed += SolutionEventsOnProjectRenamed;
-            //DTE2.Events.SolutionEvents.Renamed += SolutionEventsOnRenamed;
+            GetGlobalServices();
+
+            ProjectsWithReferences = new List<Project>();
         }
 
         private void OnRenameProject(object sender, EventArgs e)
         {
             try
             {
+                // Get the currently selected project within the solution explorer.
                 var selectedProject = GetSelectedProject();
 
+                // Get the new project name from the user.
                 var rename = new RenameProjectDialog(selectedProject.Name);
                 var result = rename.ShowDialog();
                 if (!result.HasValue || !result.Value)
@@ -63,41 +59,23 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                     return;
                 }
 
-                ProjectsWithReferences = new List<Project>();
+                // Check if this is necessary when the references check was refactored!
+                ProjectsWithReferences.Clear();
+                
+                // Save all changes that were made before the renaming process. Just for safety!
+                SaveSolutionFile();
 
-                var solution = GetGlobalService(typeof (IVsSolution)) as IVsSolution;
-                var dte = GetGlobalService(typeof (SDTE)) as DTE2;
+                // Check if there's an solution folder or return null.
+                var solutionFolder = GetSolutionFolder(selectedProject);
 
-                //var solution4 = solution as EnvDTE100.Solution4;
-
-                //solution.GetProperty(__VSPROPID.VSPROPID_IsSolutionDirty)
-
-                if (dte.Solution.IsDirty)
-                {
-                    solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
-                }
-
-                IVsHierarchy projHierarchy;
-                solution.GetProjectOfUniqueName(selectedProject.UniqueName, out projHierarchy);
-
-                var projectGuid = Guid.Empty;
-                solution.GetGuidOfProject(projHierarchy, out projectGuid);
-
-                var fileName = Path.GetFileNameWithoutExtension(selectedProject.FileName);
-                var directory = new DirectoryInfo(selectedProject.FullName).Parent.Name;
+                var projectFileName = Path.GetFileNameWithoutExtension(selectedProject.FileName);
+                var parentProjectDirectory = new DirectoryInfo(selectedProject.FullName).Parent.Name;
                 //var solutionPath = selectedProject.DTE.Solution.FullName;
-
-                SolutionFolder solutionFolder = null;
-
-                if (selectedProject.ParentProjectItem != null)
-                {
-                    var parentProject = selectedProject.ParentProjectItem.Collection.Parent as Project;
-                    solutionFolder = parentProject.Object as SolutionFolder;
-                }
 
                 // Get the startup project and set it again after this project gets deleted.
                 // this uses the UniqueName of the project!
-                var startupProjects = dte.Solution.SolutionBuild.StartupProjects as Array;
+                // Try this here: Dte.Solution.Properties.Item("StartupProject").Value when this gets refactored
+                var startupProjects = Dte.Solution.SolutionBuild.StartupProjects as Array;
                 var startupName = startupProjects.GetValue(0).ToString();
                 var isStartupProject = startupName == selectedProject.UniqueName;
 
@@ -106,7 +84,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                 var oldProjectName = selectedProject.Name;
                 // This is a little bit scary: I need the old project path, before it gets moved. But this instance will have the new name after it gets renamed.
-                // Change this behaviour!
+                // Change this behavior!
                 OldProject = selectedProject;
                 OldProjectName = oldProjectName;
 
@@ -118,7 +96,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 var newDirectory = Path.GetFileNameWithoutExtension(selectedProject.FileName);
 
                 IVsHierarchy unloadHierarchy;
-                solution.GetProjectOfUniqueName(selectedProject.UniqueName, out unloadHierarchy);
+                Solution.GetProjectOfUniqueName(selectedProject.UniqueName, out unloadHierarchy);
 
                 // Save the complete solution.
                 //Solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
@@ -135,7 +113,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 // Activate COMExceptions to be thrown?
                 var newProject = selectedProject;
 
-                if (fileName == directory)
+                if (projectFileName == parentProjectDirectory)
                 {
                     // Maybe here or just in case the directory gets renamed:                   
                     // Check if other projects depend on the renamed one. In this case we must collect those references and change them after the renaming process is finished.
@@ -152,7 +130,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                     //    Debug.WriteLine(reference.Name + " " + reference.Path);
                     //}
 
-                    CheckProjects(dte, newProject);
+                    CheckProjects(Dte, newProject);
 
                     //      If TypeOf objProject.Object Is VSLangProj.VSProject Then
 
@@ -181,12 +159,12 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                     //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, unloadHierarchy, 0);
 
-                    object isExpanded = false;
-                    ErrorHandler.ThrowOnFailure(unloadHierarchy.GetProperty(projectItemId,
-                        (int)__VSHPROPID.VSHPROPID_Expanded, out isExpanded));
+                    //object isExpanded = false;
+                    //ErrorHandler.ThrowOnFailure(unloadHierarchy.GetProperty(projectItemId,
+                    //    (int)__VSHPROPID.VSHPROPID_Expanded, out isExpanded));
 
                     // Remove the project from the solution file!
-                    solution.CloseSolutionElement(
+                    Solution.CloseSolutionElement(
                         (uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave |
                         (uint) __VSSLNCLOSEOPTIONS.SLNCLOSEOPT_DeleteProject, unloadHierarchy, 0);
 
@@ -226,7 +204,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                     if (solutionFolder == null)
                     {
                         newProject =
-                            dte.Solution.AddFromFile(
+                            Dte.Solution.AddFromFile(
                                 Path.Combine(Path.Combine(di2.Parent.FullName, newDirectory), fname));
                     }
                     else
@@ -263,14 +241,14 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                     //}
 
-                    if (Convert.ToBoolean(isExpanded))
-                    {
-                        ErrorHandler.ThrowOnFailure(unloadHierarchy.SetProperty(VSConstants.VSITEMID_ROOT,
-                            (int)__VSHPROPID.VSHPROPID_Expanded, true));
-                    }
+                    //if (Convert.ToBoolean(isExpanded))
+                    //{
+                    //    ErrorHandler.ThrowOnFailure(unloadHierarchy.SetProperty(VSConstants.VSITEMID_ROOT,
+                    //        (int)__VSHPROPID.VSHPROPID_Expanded, true));
+                    //}
 
                     // Use the IsDirty flag when this gets outsorced within a new method.
-                    solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
+                    Solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
 
                     //new DirectoryInfo(selectedProject.FullName).Parent.MoveTo();
 
@@ -325,7 +303,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 }
 
                 IVsHierarchy newProjectHierarchy;
-                solution.GetProjectOfUniqueName(newProject.UniqueName, out newProjectHierarchy);
+                Solution.GetProjectOfUniqueName(newProject.UniqueName, out newProjectHierarchy);
 
                 // Changing the default namespace and the assembly name.
                 var defaultNamespace = newProject.Properties.Item("DefaultNamespace") as Property;
@@ -346,7 +324,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 // Is there another similar flag for solutions? If it exists should I use it to check if I should save the solution?
                 if (newProject.IsDirty)
                 {
-                    solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, newProjectHierarchy,
+                    Solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, newProjectHierarchy,
                         0);
                 }
 
@@ -369,7 +347,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                 if (ai.IsDirty)
                 {
-                    solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, newProjectHierarchy,
+                    Solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, newProjectHierarchy,
                         0);
                 }
 
@@ -391,7 +369,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                     //    solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
                     //}
 
-                    dte.Solution.Properties.Item("StartupProject").Value = newProject.Name;
+                    Dte.Solution.Properties.Item("StartupProject").Value = newProject.Name;
 
                     // This should work if I can get the path of the project node within the solution structure.
                     //UIHierarchy UIH = dte.ToolWindows.SolutionExplorer;
@@ -409,7 +387,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                 }
 
-                dte.Solution.SolutionBuild.Build();
+                Dte.Solution.SolutionBuild.Build();
 
                 //foreach (CodeElement codeElement in ai.FileCodeModel.CodeElements)
                 //{
@@ -456,6 +434,43 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 Debug.WriteLine(exception);
             }
         }
+
+        private void GetGlobalServices()
+        {
+            Solution = GetGlobalService(typeof(IVsSolution)) as IVsSolution;
+            Dte = GetGlobalService(typeof(SDTE)) as DTE2;
+
+            if (Solution == null || Dte == null)
+            {
+                throw new InvalidOperationException("The Solution Or The Dte Object is null!");
+            }
+        }
+
+        private void SaveSolutionFile()
+        {
+            if (Dte.Solution.IsDirty)
+            {
+                Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
+            }
+        }
+
+        private SolutionFolder GetSolutionFolder(Project project)
+        {
+            if (project.ParentProjectItem == null)
+            {
+                return null;
+            }
+
+            var parentProject = project.ParentProjectItem.Collection.Parent as Project;
+
+            if (parentProject == null)
+            {
+                throw new InvalidOperationException("The Parent Project Of The Current Selected Project cannot be determined!");
+            }
+
+            return parentProject.Object as SolutionFolder;
+        }
+
         uint projectItemId;
         private Project GetSelectedProject()
         {

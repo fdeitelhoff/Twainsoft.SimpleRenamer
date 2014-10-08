@@ -181,7 +181,7 @@
     <Compile Include="VSX\SolutionEventsHandler.cs" />
     <Compile Include="VSX\SolutionRenamer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="VSX\PkgCmdID.cs" />
+    <Compile Include="VSX\PkgCmdIdList.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\Resources.resx">
