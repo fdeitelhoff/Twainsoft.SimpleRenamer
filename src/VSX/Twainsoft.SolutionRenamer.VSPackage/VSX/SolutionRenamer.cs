@@ -46,6 +46,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
         private void OnRenameProject(object sender, EventArgs e)
         {
+            // TODO: NewProject variable names to currentproject? Sounds better!
             try
             {
                 // Get the currently selected project within the solution explorer.
@@ -95,9 +96,6 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 var fullName = selectedProject.FullName;
                 var newDirectory = Path.GetFileNameWithoutExtension(selectedProject.FileName);
 
-                IVsHierarchy unloadHierarchy;
-                Solution.GetProjectOfUniqueName(selectedProject.UniqueName, out unloadHierarchy);
-
                 // Save the complete solution.
                 //Solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
 
@@ -112,6 +110,9 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                 // Activate COMExceptions to be thrown?
                 var newProject = selectedProject;
+
+                IVsHierarchy newProjectHierarchy;
+                Solution.GetProjectOfUniqueName(newProject.UniqueName, out newProjectHierarchy);
 
                 if (projectFileName == parentProjectDirectory)
                 {
@@ -159,16 +160,22 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                     //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, unloadHierarchy, 0);
 
-                    //object isExpanded = false;
-                    //ErrorHandler.ThrowOnFailure(unloadHierarchy.GetProperty(projectItemId,
-                    //    (int)__VSHPROPID.VSHPROPID_Expanded, out isExpanded));
+                    //IVsHierarchy unloadHierarchy;
+                    //Solution.GetProjectOfUniqueName(newProject.UniqueName, out unloadHierarchy);
+
+                    uint projectNodeId = 0;
+                    newProjectHierarchy.ParseCanonicalName(newProject.FullName, out projectNodeId);
+
+                    object isExpanded = false;
+                    ErrorHandler.ThrowOnFailure(newProjectHierarchy.GetProperty(projectNodeId,
+                        (int)__VSHPROPID.VSHPROPID_Expanded, out isExpanded));
 
                     // Remove the project from the solution file!
                     Solution.CloseSolutionElement(
                         (uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave |
-                        (uint) __VSSLNCLOSEOPTIONS.SLNCLOSEOPT_DeleteProject, unloadHierarchy, 0);
+                        (uint) __VSSLNCLOSEOPTIONS.SLNCLOSEOPT_DeleteProject, newProjectHierarchy, 0);
 
-                    // Use the IsDirty flag when this gets outsorced within a new method.
+                    // Use the IsDirty flag when this gets outsourced within a new method.
                     //solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
 
                     // A numeric comparison was attempted on "$(TargetPlatformVersion)" that evaluates to "" instead of a number, in condition "'$(TargetPlatformVersion)' > '8.0'". 
@@ -241,11 +248,11 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                     //}
 
-                    //if (Convert.ToBoolean(isExpanded))
-                    //{
-                    //    ErrorHandler.ThrowOnFailure(unloadHierarchy.SetProperty(VSConstants.VSITEMID_ROOT,
-                    //        (int)__VSHPROPID.VSHPROPID_Expanded, true));
-                    //}
+                    if (Convert.ToBoolean(isExpanded))
+                    {
+                        ErrorHandler.ThrowOnFailure(newProjectHierarchy.SetProperty(projectNodeId, //VSConstants.VSITEMID_ROOT,
+                            (int)__VSHPROPID.VSHPROPID_Expanded, true));
+                    }
 
                     // Use the IsDirty flag when this gets outsorced within a new method.
                     Solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
@@ -301,9 +308,6 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                     // Better this way?
                     //dte.Solution.SolutionBuild.BuildProject();
                 }
-
-                IVsHierarchy newProjectHierarchy;
-                Solution.GetProjectOfUniqueName(newProject.UniqueName, out newProjectHierarchy);
 
                 // Changing the default namespace and the assembly name.
                 var defaultNamespace = newProject.Properties.Item("DefaultNamespace") as Property;
