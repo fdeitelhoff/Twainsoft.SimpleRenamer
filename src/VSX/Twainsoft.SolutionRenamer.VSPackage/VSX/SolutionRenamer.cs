@@ -46,19 +46,22 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
         private void OnRenameProject(object sender, EventArgs e)
         {
-            // TODO: NewProject variable names to currentproject? Sounds better!
             try
             {
                 // Get the currently selected project within the solution explorer.
-                var selectedProject = GetSelectedProject();
+                var currentProject = GetSelectedProject();
 
                 // Get the new project name from the user.
-                var rename = new RenameProjectDialog(selectedProject.Name);
+                var rename = new RenameProjectDialog(currentProject.Name);
                 var result = rename.ShowDialog();
                 if (!result.HasValue || !result.Value)
                 {
                     return;
                 }
+
+                // TODO: Check if there's another project with this name! (Where to check??)
+                // This is the new project name the user typed in.
+                var newProjectName = rename.GetProjectName();
 
                 // Check if this is necessary when the references check was refactored!
                 ProjectsWithReferences.Clear();
@@ -67,71 +70,31 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 SaveSolutionFile();
 
                 // Check if there's an solution folder or return null.
-                var solutionFolder = GetSolutionFolder(selectedProject);
+                var solutionFolder = GetSolutionFolder(currentProject);
 
-                var projectFileName = Path.GetFileNameWithoutExtension(selectedProject.FileName);
-                var parentProjectDirectory = new DirectoryInfo(selectedProject.FullName).Parent.Name;
-                //var solutionPath = selectedProject.DTE.Solution.FullName;
+                // Get the file name and the parent directory of the current project before it gets renamed!
+                var projectFileName = currentProject.Name;
+                var projectParentDirectory = GetProjectParentDirectory(currentProject);
 
-                // Get the startup project and set it again after this project gets deleted.
-                // this uses the UniqueName of the project!
-                // Try this here: Dte.Solution.Properties.Item("StartupProject").Value when this gets refactored
-                var startupProjects = Dte.Solution.SolutionBuild.StartupProjects as Array;
-                var startupName = startupProjects.GetValue(0).ToString();
-                var isStartupProject = startupName == selectedProject.UniqueName;
+                // Check if the current project is the startup project before it gets renamed and temporarily deleted.
+                var isStartupProject = IsStartupProject(currentProject);
 
-                // Another try for the mighty AccessViolation:
-                // Remove the project first and then rename it? Is this possible or will we get an project is not available then?
-
-                var oldProjectName = selectedProject.Name;
+                var oldProjectName = currentProject.Name;
                 // This is a little bit scary: I need the old project path, before it gets moved. But this instance will have the new name after it gets renamed.
                 // Change this behavior!
-                OldProject = selectedProject;
+                OldProject = currentProject;
                 OldProjectName = oldProjectName;
 
-                var newProjectName = rename.GetProjectName();
-                selectedProject.Name = newProjectName;
+                currentProject.Name = newProjectName;
 
-                var fname = Path.GetFileName(selectedProject.FileName);
-                var fullName = selectedProject.FullName;
-                var newDirectory = Path.GetFileNameWithoutExtension(selectedProject.FileName);
-
-                // Save the complete solution.
-                //Solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
-
-                // Save the renamed project.
-                //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, unloadHierarchy, 0);
-
-                //var projectType = Guid.Empty;
-                //var projectIid = Guid.Empty;
-                //IntPtr proj;
-                //Solution.CreateProject(ref projectType, fullName, null, null, (uint)__VSCREATEPROJFLAGS.CPF_OPENFILE, ref projectIid,
-                //    out proj);
-
-                // Activate COMExceptions to be thrown?
-                var newProject = selectedProject;
-
+                // The hierarchy is needed for some of the following actions.
                 IVsHierarchy newProjectHierarchy;
-                Solution.GetProjectOfUniqueName(newProject.UniqueName, out newProjectHierarchy);
+                Solution.GetProjectOfUniqueName(currentProject.UniqueName, out newProjectHierarchy);
 
-                if (projectFileName == parentProjectDirectory)
+                if (projectFileName == projectParentDirectory)
                 {
-                    // Maybe here or just in case the directory gets renamed:                   
-                    // Check if other projects depend on the renamed one. In this case we must collect those references and change them after the renaming process is finished.
-                    // First it's implemented here! If this use case is relevant for the normal project renaming too, I'll move the code outside the if statement.
-
-                    //var bla2 = dte.Solution.Projects.Item("CA1");
-                    // Get the references projects ands dlls of the currently renamed project.
-                    //var project = newProject.Object as VSProject2;
-
-                    //var references = project.References as References2;
-
-                    //foreach (Reference5 reference in references)
-                    //{
-                    //    Debug.WriteLine(reference.Name + " " + reference.Path);
-                    //}
-
-                    CheckProjects(Dte, newProject);
+                    // Check if other projects have references to the currently selected project. These references must be changed too!
+                    CheckProjectsForReferences(Dte, currentProject);
 
                     //      If TypeOf objProject.Object Is VSLangProj.VSProject Then
 
@@ -163,12 +126,16 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                     //IVsHierarchy unloadHierarchy;
                     //Solution.GetProjectOfUniqueName(newProject.UniqueName, out unloadHierarchy);
 
-                    uint projectNodeId = 0;
-                    newProjectHierarchy.ParseCanonicalName(newProject.FullName, out projectNodeId);
+                    //uint projectNodeId = 0;
+                    //newProjectHierarchy.ParseCanonicalName(currentProject.FullName, out projectNodeId);
 
-                    object isExpanded = false;
-                    ErrorHandler.ThrowOnFailure(newProjectHierarchy.GetProperty(projectNodeId,
-                        (int)__VSHPROPID.VSHPROPID_Expanded, out isExpanded));
+                    //object isExpanded = false;
+                    //ErrorHandler.ThrowOnFailure(newProjectHierarchy.GetProperty(projectNodeId,
+                    //    (int)__VSHPROPID.VSHPROPID_Expanded, out isExpanded));
+
+                    var fname = Path.GetFileName(currentProject.FileName);
+                    var fullName = currentProject.FullName;
+                    var newDirectory = currentProject.Name;
 
                     // Remove the project from the solution file!
                     Solution.CloseSolutionElement(
@@ -210,13 +177,13 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                     if (solutionFolder == null)
                     {
-                        newProject =
+                        currentProject =
                             Dte.Solution.AddFromFile(
                                 Path.Combine(Path.Combine(di2.Parent.FullName, newDirectory), fname));
                     }
                     else
                     {
-                        newProject =
+                        currentProject =
                             solutionFolder.AddFromFile(
                                 Path.Combine(Path.Combine(di2.Parent.FullName, newDirectory), fname));
                     }
@@ -248,11 +215,11 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                     //}
 
-                    if (Convert.ToBoolean(isExpanded))
-                    {
-                        ErrorHandler.ThrowOnFailure(newProjectHierarchy.SetProperty(projectNodeId, //VSConstants.VSITEMID_ROOT,
-                            (int)__VSHPROPID.VSHPROPID_Expanded, true));
-                    }
+                    //if (Convert.ToBoolean(isExpanded))
+                    //{
+                    //    ErrorHandler.ThrowOnFailure(newProjectHierarchy.SetProperty(projectNodeId, //VSConstants.VSITEMID_ROOT,
+                    //        (int)__VSHPROPID.VSHPROPID_Expanded, true));
+                    //}
 
                     // Use the IsDirty flag when this gets outsorced within a new method.
                     Solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
@@ -303,15 +270,15 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                     var references = project.References as References2;
 
-                    references.AddProject(newProject);
+                    references.AddProject(currentProject);
 
                     // Better this way?
                     //dte.Solution.SolutionBuild.BuildProject();
                 }
 
                 // Changing the default namespace and the assembly name.
-                var defaultNamespace = newProject.Properties.Item("DefaultNamespace") as Property;
-                var assemblyName = newProject.Properties.Item("AssemblyName") as Property;
+                var defaultNamespace = currentProject.Properties.Item("DefaultNamespace") as Property;
+                var assemblyName = currentProject.Properties.Item("AssemblyName") as Property;
 
                 if (defaultNamespace.Value.ToString().Contains(oldProjectName))
                 {
@@ -326,14 +293,14 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                 // Maybe this will work? Should I use this flag whenever I want to save the project?
                 // Is there another similar flag for solutions? If it exists should I use it to check if I should save the solution?
-                if (newProject.IsDirty)
+                if (currentProject.IsDirty)
                 {
                     Solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, newProjectHierarchy,
                         0);
                 }
 
                 // Change some info in the AssemblyInfo.cs file!
-                var bla = newProject.ProjectItems.Item("Properties");
+                var bla = currentProject.ProjectItems.Item("Properties");
                 var ai = bla.ProjectItems.Item("AssemblyInfo.cs");
 
                 var at = ai.FileCodeModel.CodeElements.Item("AssemblyTitle") as CodeAttribute2;
@@ -373,7 +340,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                     //    solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
                     //}
 
-                    Dte.Solution.Properties.Item("StartupProject").Value = newProject.Name;
+                    Dte.Solution.Properties.Item("StartupProject").Value = currentProject.Name;
 
                     // This should work if I can get the path of the project node within the solution structure.
                     //UIHierarchy UIH = dte.ToolWindows.SolutionExplorer;
@@ -432,7 +399,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
             {
                 Debug.WriteLine(comException);
             }
-            // Just as a fail safe senario! Should be remove in future versions.
+            // Just as a fail safe scenario! Should be remove in future versions.
             catch (Exception exception)
             {
                 Debug.WriteLine(exception);
@@ -474,14 +441,30 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
             return parentProject.Object as SolutionFolder;
         }
+        
+        private string GetProjectParentDirectory(Project project)
+        {
+            var parent = Directory.GetParent(project.FullName);
 
-        uint projectItemId;
+            if (parent == null)
+            {
+                throw new InvalidOperationException("The Project Parent Directory Is Null!");
+            }
+
+            return parent.Name;
+        }
+
+        private bool IsStartupProject(Project project)
+        {
+            return Dte.Solution.Properties.Item("StartupProject").Value.ToString() == project.Name;
+        }
+
         private Project GetSelectedProject()
         {
             IntPtr hierarchyPointer, selectionContainerPointer;
             object selectedObject = null;
             IVsMultiItemSelect multiItemSelect;
-            
+            uint projectItemId;
 
             var monitorSelection =
                 (IVsMonitorSelection)GetGlobalService(
@@ -507,7 +490,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
         }
 
         // There are events for references added, removed and changed. Maybe this is useful in the future?
-        private void CheckProjects(DTE2 dte, Project newProject)
+        private void CheckProjectsForReferences(DTE2 dte, Project newProject)
         {
             NewProjectName = newProject.Name;
 
@@ -586,17 +569,5 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 }
             }
         }
-
-        //private void SolutionEventsOnRenamed(string oldName)
-        //{
-        //    Debug.WriteLine("SolutionEventsOnRenamed");
-        //}
-
-        //public DTE DTE2 { get; set; }
-
-        //private void SolutionEventsOnProjectRenamed(Project project, string oldName)
-        //{
-        //    Debug.WriteLine("SolutionEventsOnProjectRenamed");
-        //}
     }
 }
