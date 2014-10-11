@@ -88,151 +88,42 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 currentProject.Name = newProjectName;
 
                 // The hierarchy is needed for some of the following actions.
-                IVsHierarchy newProjectHierarchy;
-                Solution.GetProjectOfUniqueName(currentProject.UniqueName, out newProjectHierarchy);
+                IVsHierarchy currentProjectHierarchy;
+                Solution.GetProjectOfUniqueName(currentProject.UniqueName, out currentProjectHierarchy);
 
                 if (projectFileName == projectParentDirectory)
                 {
                     // Check if other projects have references to the currently selected project. These references must be changed too!
                     CheckProjectsForReferences(Dte, currentProject);
 
-                    //      If TypeOf objProject.Object Is VSLangProj.VSProject Then
-
-                    //objVSProject = DirectCast(objProject.Object, VSLangProj.VSProject)
-                    //newProject.Object as VSLangProj.SVsProjectItem
-
-
-                    //var solution2 = Solution as IVsSolution2;
-                    //var solution3 = Solution as IVsSolution3;
-                    //var solution4 = Solution as IVsSolution4;
-                    //var workspace = MSBuildWorkspace.Create();
-                    //var solution = workspace.OpenSolutionAsync(solutionPath).Result;
-
-                    //var defaultProject = selectedProject.is
-
-                    // Unload the saved project.
-                    //Solution.CloseSolutionElement((uint)__VSSLNCLOSEOPTIONS.SLNCLOSEOPT_UnloadProject, unloadHierarchy, 0);
-                    //solution4.UnloadProject(projectGuid, (uint)_VSProjectUnloadStatus.UNLOADSTATUS_LoadPendingIfNeeded);
-                    //Solution.re
-
-                    //// Save the renamed project.
-                    //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, unloadHierarchy, 0);
-
-                    //// Save the complete solution.
-                    //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
-
-                    //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, unloadHierarchy, 0);
-
-                    //IVsHierarchy unloadHierarchy;
-                    //Solution.GetProjectOfUniqueName(newProject.UniqueName, out unloadHierarchy);
-
-                    //uint projectNodeId = 0;
-                    //newProjectHierarchy.ParseCanonicalName(currentProject.FullName, out projectNodeId);
-
-                    //object isExpanded = false;
-                    //ErrorHandler.ThrowOnFailure(newProjectHierarchy.GetProperty(projectNodeId,
-                    //    (int)__VSHPROPID.VSHPROPID_Expanded, out isExpanded));
-
-                    var fname = Path.GetFileName(currentProject.FileName);
-                    var fullName = currentProject.FullName;
-                    var newDirectory = currentProject.Name;
+                    // We need some data for future actions. Collect them here because the project is ready to get removed from the solution!
+                    var newProjectFileName = Path.GetFileName(currentProject.FileName);
+                    var fullProjectName = currentProject.FullName;
+                    var newProjectDirectory = currentProject.Name;
 
                     // Remove the project from the solution file!
-                    Solution.CloseSolutionElement(
-                        (uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave |
-                        (uint) __VSSLNCLOSEOPTIONS.SLNCLOSEOPT_DeleteProject, newProjectHierarchy, 0);
+                    RemoveProjectFromSolution(currentProjectHierarchy);
 
-                    // Use the IsDirty flag when this gets outsourced within a new method.
-                    //solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
+                    // Move the project folder on the file system within the solution folder!
+                    MoveProjectFolder(fullProjectName, newProjectDirectory);
 
-                    // A numeric comparison was attempted on "$(TargetPlatformVersion)" that evaluates to "" instead of a number, in condition "'$(TargetPlatformVersion)' > '8.0'". 
-                    // C:\Program Files (x86)\MSBuild\12.0\bin\Microsoft.Common.CurrentVersion.targets
-                    // Where the hell is this gonna come from?
-
-                    var di = new DirectoryInfo(fullName).Parent;
-                    di.MoveTo(Path.Combine(di.Parent.FullName, newDirectory));
-                    //solution3.UpdateProjectFileLocationForUpgrade(di.FullName, Path.Combine(di.Parent.FullName, newDirectory));
-                    //solution2.UpdateProjectFileLocation(unloadHierarchy);
-
-                    //SolutionFolder sf;
-
-                    //foreach (Project proj in dte.Solution.Projects)
-                    //{
-                    //    //System.Windows.Forms.MessageBox.Show(proj.Kind, " proj.Kind ");
-
-                    //    //System.Windows.Forms.MessageBox.Show(proj.Name, " proj.Name ");
-
-
-
-                    //    if (proj.Kind == ProjectKinds.vsProjectKindSolutionFolder)
-                    //    {
-
-                    //        sf = (SolutionFolder)proj.Object;
-                    //        //sf.AddFromTemplate(templateFile, destination, strProjectName);
-                    //        break;
-                    //    }
-                    //}
-
-                    var di2 = new DirectoryInfo(fullName).Parent;
+                    var di2 = new DirectoryInfo(fullProjectName).Parent;
 
                     if (solutionFolder == null)
                     {
                         currentProject =
                             Dte.Solution.AddFromFile(
-                                Path.Combine(Path.Combine(di2.Parent.FullName, newDirectory), fname));
+                                Path.Combine(Path.Combine(di2.Parent.FullName, newProjectDirectory), newProjectFileName));
                     }
                     else
                     {
                         currentProject =
                             solutionFolder.AddFromFile(
-                                Path.Combine(Path.Combine(di2.Parent.FullName, newDirectory), fname));
+                                Path.Combine(Path.Combine(di2.Parent.FullName, newProjectDirectory), newProjectFileName));
                     }
 
-                    //// Save the complete solution.
-                    //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
-
-                    //solution3.UpdateProjectFileLocationForUpgrade(di.FullName, Path.Combine(di.Parent.FullName, newDirectory));
-
-                    // Save the renamed project.
-                    //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, unloadHierarchy, 0);
-
-                    // Save the complete solution.
-                    //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
-
-                    //using (var reader = new StreamReader(solutionPath))
-                    //{
-                    //    var contents = reader.ReadToEnd();
-
-                    //    //var regex = "Project(\"{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}\") = \"ConsoleApplication1\", \"" + directory
-                    //    //    + "ConsoleApplication1.csproj\", \"" + projectGuid + "\"";
-
-                    //    //var replace = "Project(\"{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}\") = \"ConsoleApplication1\", \"" + newDirectory
-                    //    //    + "ConsoleApplication1.csproj\", \"" + projectGuid + "\"";
-
-                    //    //Regex.Replace(contents, regex, replace);
-
-                    //    //File.WriteAllText(solutionPath, contents);
-
-                    //}
-
-                    //if (Convert.ToBoolean(isExpanded))
-                    //{
-                    //    ErrorHandler.ThrowOnFailure(newProjectHierarchy.SetProperty(projectNodeId, //VSConstants.VSITEMID_ROOT,
-                    //        (int)__VSHPROPID.VSHPROPID_Expanded, true));
-                    //}
-
-                    // Use the IsDirty flag when this gets outsorced within a new method.
-                    Solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
-
-                    //new DirectoryInfo(selectedProject.FullName).Parent.MoveTo();
-
-                    //var dte = Package.GetGlobalService(typeof(SDTE)) as EnvDTE.DTE;
-                    //dte.ExecuteCommand("Project.ReloadProject");
-                    //solution4.ReloadProject(projectGuid);
-
-                    // Save the complete solution.
-                    // Is this neccessarry?
-                    //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
+                    // Save the solution file after we moved the project.
+                    SaveSolutionFile();
                 }
 
                 //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
@@ -295,7 +186,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 // Is there another similar flag for solutions? If it exists should I use it to check if I should save the solution?
                 if (currentProject.IsDirty)
                 {
-                    Solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, newProjectHierarchy,
+                    Solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, currentProjectHierarchy,
                         0);
                 }
 
@@ -318,7 +209,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                 if (ai.IsDirty)
                 {
-                    Solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, newProjectHierarchy,
+                    Solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, currentProjectHierarchy,
                         0);
                 }
 
@@ -568,6 +459,34 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                     ProjectsWithReferences.Add(proj);
                 }
             }
+        }
+
+        private void RemoveProjectFromSolution(IVsHierarchy projectHierarchy)
+        {
+            Solution.CloseSolutionElement(
+                        (uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave |
+                        (uint)__VSSLNCLOSEOPTIONS.SLNCLOSEOPT_DeleteProject, projectHierarchy, 0);
+        }
+        
+        private void MoveProjectFolder(string fullProjectName, string newProjectDirectory)
+        {
+            var projectParentDirectory = new DirectoryInfo(fullProjectName).Parent;
+
+            if (projectParentDirectory == null)
+            {
+                throw new InvalidOperationException("The Parent Project Directory Is Null!");
+            }
+
+            // Yes, my naming is... perfect?
+            var parentProjectParentDirectory = projectParentDirectory.Parent;
+
+            if (parentProjectParentDirectory == null)
+            {
+                throw new InvalidOperationException("The Parent Project Parent Directory Is Null!");
+            }
+
+            // Move the current project folder to a folder with the new project name.
+            projectParentDirectory.MoveTo(Path.Combine(parentProjectParentDirectory.FullName, newProjectDirectory));
         }
     }
 }
