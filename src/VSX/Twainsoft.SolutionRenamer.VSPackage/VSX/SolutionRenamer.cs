@@ -107,52 +107,13 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                     // Move the project folder on the file system within the solution folder!
                     MoveProjectFolder(fullProjectName, newProjectDirectory);
 
-                    var di2 = new DirectoryInfo(fullProjectName).Parent;
-
-                    if (solutionFolder == null)
-                    {
-                        currentProject =
-                            Dte.Solution.AddFromFile(
-                                Path.Combine(Path.Combine(di2.Parent.FullName, newProjectDirectory), newProjectFileName));
-                    }
-                    else
-                    {
-                        currentProject =
-                            solutionFolder.AddFromFile(
-                                Path.Combine(Path.Combine(di2.Parent.FullName, newProjectDirectory), newProjectFileName));
-                    }
+                    // Add the renamed project to the solution. Either directly or within a solution folder.
+                    // The return project is the new current project we're using for all other steps.
+                    currentProject = AddProjectToSolution(solutionFolder, newProjectFileName, fullProjectName, newProjectDirectory);
 
                     // Save the solution file after we moved the project.
                     SaveSolutionFile();
                 }
-
-                //Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
-
-                //foreach (Property property in newProject.Properties)
-                //{
-                //    try
-                //    {
-                //        Debug.WriteLine(property.Name + " " + property.Value);
-                //    }
-                //    catch (Exception ex3)
-                //    {
-                //        Debug.WriteLine(ex3);
-                //    }
-
-                //}
-
-                //foreach (Property property in solution.GetProperty(__VSPROPID.VSPROPID_IsSolutionDirty))
-                //{
-                //    try
-                //    {
-                //        Debug.WriteLine(property.Name + " " + property.Value);
-                //    }
-                //    catch (Exception ex3)
-                //    {
-                //        Debug.WriteLine(ex3);
-                //    }
-
-                //}
 
                 // Now we want to add lost project references due to the name change.
                 foreach (var proj in ProjectsWithReferences)
@@ -163,8 +124,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                     references.AddProject(currentProject);
 
-                    // Better this way?
-                    //dte.Solution.SolutionBuild.BuildProject();
+
                 }
 
                 // Changing the default namespace and the assembly name.
@@ -190,101 +150,19 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                         0);
                 }
 
-                // Change some info in the AssemblyInfo.cs file!
-                var bla = currentProject.ProjectItems.Item("Properties");
-                var ai = bla.ProjectItems.Item("AssemblyInfo.cs");
+                // Change some data in the AssemblyInfo.cs file if those data matches the old project name! (AssemblyTitle and AssemblyProduct)
+                ChangeAssemblyData(currentProject, oldProjectName, newProjectName, currentProjectHierarchy);
 
-                var at = ai.FileCodeModel.CodeElements.Item("AssemblyTitle") as CodeAttribute2;
-                var assemblyProduct = ai.FileCodeModel.CodeElements.Item("AssemblyProduct") as CodeAttribute2;
-
-                if (at.Value.Contains(oldProjectName))
-                {
-                    at.Value = at.Value.Replace(oldProjectName, newProjectName);
-                }
-
-                if (assemblyProduct.Value.Contains(oldProjectName))
-                {
-                    assemblyProduct.Value = assemblyProduct.Value.Replace(oldProjectName, newProjectName);
-                }
-
-                if (ai.IsDirty)
-                {
-                    Solution.SaveSolutionElement((uint) __VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, currentProjectHierarchy,
-                        0);
-                }
-
+                // If the renamed project was the startup project, we need to refresh this setting after it was deleted.
                 if (isStartupProject)
                 {
-                    //var startupProjects = dte.Solution.SolutionBuild.StartupProjects as Array;
-                    //startupProjects.SetValue(newProject.UniqueName, 0);
-                    //dte.Solution.SolutionBuild.StartupProjects
-
-//// ReSharper disable UseArrayCreationExpression.1
-//                        var newStartUpProjects = Array.CreateInstance(typeof (object), 1);
-//// ReSharper restore UseArrayCreationExpression.1
-//                        newStartUpProjects.SetValue(newProject.UniqueName, 0);
-
-//                        dte.Solution.SolutionBuild.StartupProjects = newStartUpProjects;
-
-                    //if (dte.Solution.IsDirty)
-                    //{
-                    //    solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
-                    //}
-
                     Dte.Solution.Properties.Item("StartupProject").Value = currentProject.Name;
-
-                    // This should work if I can get the path of the project node within the solution structure.
-                    //UIHierarchy UIH = dte.ToolWindows.SolutionExplorer;
-
-                    ////UIH.GetItem(@"ConsoleApplication4\SolutionFolder\ClassLibraryNeu1")
-                    //UIHierarchyItem UIHItem = UIH.GetItem(newProject.Name);
-
-                    //UIHItem.Select(vsUISelectionType.vsUISelectionTypeSetCaret);
-
-                    //UIHItem.UIHierarchyItems.Expanded = true;
-
-                    //UIHItem.Select(vsUISelectionType.vsUISelectionTypeSelect);
-
-
-
                 }
 
+                // Rebuild the complete solution.
                 Dte.Solution.SolutionBuild.Build();
-
-                //foreach (CodeElement codeElement in ai.FileCodeModel.CodeElements)
-                //{
-                //    try
-                //    {
-                //        Debug.WriteLine(codeElement.Name + " " + codeElement.Kind);
-                //    }
-                //    catch (Exception ex4)
-                //    {
-                //        Debug.WriteLine(ex4);
-                //    }
-                //}
-
-                // Get Access to the AssemblyInfo.cs to change some other stuff.
-                // Properties {6BB5F8EF-4483-11D3-8BCF-00C04F8EC28C}
-                //foreach (ProjectItem projectItem in newProject.ProjectItems)
-                //{
-                //    Debug.WriteLine(projectItem.Name + " " + projectItem.Kind);
-                //}
-
-                //Solution.OnAfterRenameProject(selectedProject, selectedProject.Name, "bla", 0);
-
-                //var window = this.FindToolWindow(typeof(MyToolWindow), 0, true);
-                //if ((null == window) || (null == window.Frame))
-                //{
-                //    throw new NotSupportedException(Resources.Resources.CanNotCreateWindow);
-                //}
-                //var windowFrame = (IVsWindowFrame)window.Frame;
-                //Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(windowFrame.Show());
-
-                //var Solution = GetGlobalService(typeof(IVsSolution)) as IVsSolution;
-
-                //var hierarchy = SolutionEventsHandler.hier;
-
-                //Solution.CloseSolutionElement((uint)__VSSLNCLOSEOPTIONS.SLNCLOSEOPT_UnloadProject, hierarchy, 0);
+                // Better this way?
+                //dte.Solution.SolutionBuild.BuildProject();
             }
             catch (COMException comException)
             {
@@ -294,6 +172,35 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
             catch (Exception exception)
             {
                 Debug.WriteLine(exception);
+            }
+        }
+
+        private void ChangeAssemblyData(Project currentProject, string oldProjectName, string newProjectName, IVsHierarchy currentProjectHierarchy)
+        {
+            var properties = currentProject.ProjectItems.Item("Properties");
+            var assemblyInfo = properties.ProjectItems.Item("AssemblyInfo.cs");
+
+            var assemblyTitle = assemblyInfo.FileCodeModel.CodeElements.Item("AssemblyTitle") as CodeAttribute2;
+            var assemblyProduct = assemblyInfo.FileCodeModel.CodeElements.Item("AssemblyProduct") as CodeAttribute2;
+
+            if (assemblyTitle == null || assemblyProduct == null)
+            {
+                throw new InvalidOperationException("AssemblyTitle Or AssemblyProduct Attribute Is Null!");
+            }
+
+            if (assemblyTitle.Value.Contains(oldProjectName))
+            {
+                assemblyTitle.Value = assemblyTitle.Value.Replace(oldProjectName, newProjectName);
+            }
+
+            if (assemblyProduct.Value.Contains(oldProjectName))
+            {
+                assemblyProduct.Value = assemblyProduct.Value.Replace(oldProjectName, newProjectName);
+            }
+
+            if (assemblyInfo.IsDirty)
+            {
+                Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, currentProjectHierarchy, 0);
             }
         }
 
@@ -470,15 +377,15 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
         
         private void MoveProjectFolder(string fullProjectName, string newProjectDirectory)
         {
-            var projectParentDirectory = new DirectoryInfo(fullProjectName).Parent;
+            var parentProjectDirectory = new DirectoryInfo(fullProjectName).Parent;
 
-            if (projectParentDirectory == null)
+            if (parentProjectDirectory == null)
             {
                 throw new InvalidOperationException("The Parent Project Directory Is Null!");
             }
 
             // Yes, my naming is... perfect?
-            var parentProjectParentDirectory = projectParentDirectory.Parent;
+            var parentProjectParentDirectory = parentProjectDirectory.Parent;
 
             if (parentProjectParentDirectory == null)
             {
@@ -486,7 +393,36 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
             }
 
             // Move the current project folder to a folder with the new project name.
-            projectParentDirectory.MoveTo(Path.Combine(parentProjectParentDirectory.FullName, newProjectDirectory));
+            parentProjectDirectory.MoveTo(Path.Combine(parentProjectParentDirectory.FullName, newProjectDirectory));
+        }
+
+        private Project AddProjectToSolution(SolutionFolder solutionFolder, string newProjectFileName, string fullProjectName, string newProjectDirectory)
+        {
+            var parentProjectDirectory = new DirectoryInfo(fullProjectName).Parent;
+
+            if (parentProjectDirectory == null)
+            {
+                throw new InvalidOperationException("The Project Parent Directory Is Null!");
+            }
+
+            // Yes, my naming is... perfect?
+            var parentProjectParentDirectory = parentProjectDirectory.Parent;
+
+            if (parentProjectParentDirectory == null)
+            {
+                throw new InvalidOperationException("The Parent Project Parent Directory Is Null!");
+            }
+
+            // If there's no solution folder, we can add the project directory to the solution.
+            if (solutionFolder == null)
+            {
+                return Dte.Solution.AddFromFile(
+                        Path.Combine(Path.Combine(parentProjectParentDirectory.FullName, newProjectDirectory), newProjectFileName));
+            }
+
+            // Otherwise we must add the renamed project to the solution folder.
+            return solutionFolder.AddFromFile(
+                        Path.Combine(Path.Combine(parentProjectParentDirectory.FullName, newProjectDirectory), newProjectFileName));
         }
     }
 }
