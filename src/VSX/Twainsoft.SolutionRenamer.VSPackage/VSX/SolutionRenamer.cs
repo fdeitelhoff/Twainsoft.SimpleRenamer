@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
-using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using EnvDTE;
@@ -68,10 +67,6 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 // This is the new project name the user typed in.
                 RenameData.NewProjectName = rename.GetProjectName();
 
-                // Looks like this is not working right now. Maybe we need a separate thread for the renaming progress?
-                //progressDialog.SetMessage(currentProject.Name, newProjectName);
-                //progressDialog.Show();
-
                 // Check if this is necessary when the references check was refactored!
                 ProjectsWithReferences.Clear();
 
@@ -104,7 +99,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 if (projectFileName == projectParentDirectory)
                 {
                     // Check if other projects have references to the currently selected project. These references must be changed too!
-                    CheckProjectsForReferences(currentProject);
+                    CheckProjectsForReferences();
 
                     // We need some data for future actions. Collect them here because the project is ready to get removed from the solution!
                     var newProjectFileName = Path.GetFileName(currentProject.FileName);
@@ -151,12 +146,15 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
             }
             catch (COMException comException)
             {
-                Debug.WriteLine(comException);
+                VsMessageBox.ShowErrorMessageBox("COMException", comException.ToString());
             }
-                // Just as a fail safe scenario! Should be remove in future versions.
+            catch (IOException ioException)
+            {
+                VsMessageBox.ShowErrorMessageBox("IOException", ioException.ToString());
+            }
             catch (Exception exception)
             {
-                Debug.WriteLine(exception);
+                VsMessageBox.ShowErrorMessageBox("Unknown Exception", exception.ToString());
             }
             finally
             {
@@ -177,6 +175,8 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
         private void SaveSolution()
         {
+            StatusBarHelper.Update("Saving the current solution...");
+
             if (RenameData.Dte.Solution.IsDirty)
             {
                 RenameData.Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, null, 0);
@@ -248,25 +248,13 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
         }
 
         // There are events for references added, removed and changed. Maybe this is useful in the future?
-        private void CheckProjectsForReferences(Project newProject)
+        private void CheckProjectsForReferences()
         {
+            StatusBarHelper.Update("Checking other projects for references to the renamed one...");
+
             foreach (Project proj in RenameData.Dte.Solution.Projects)
             {
-                // Better way of checking the GUID. Maybe invert the equals check? Just now, we want to exclude solution folders.
-                // This is not recursive. We need all projects of any depth. So we need to search projects recursively within solution folders.
-                //if (proj.Name != newProject.Name && proj.Kind == "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}")
-                //{
                     NavigateProject(proj);
-                    
-                    //var project = proj.Object as VSProject2;
-                    
-                    //var references = project.References as References2;
-
-                    //foreach (Reference5 reference in references)
-                    //{
-                    //    Debug.WriteLine(reference.Name + " " + reference.Path);
-                    //}
-                //}
             }
         }
 
@@ -327,6 +315,8 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
         private void RemoveProjectFromSolution(IVsHierarchy projectHierarchy)
         {
+            StatusBarHelper.Update("Removing the old project from the solution...");
+
             RenameData.Solution.CloseSolutionElement(
                         (uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave |
                         (uint)__VSSLNCLOSEOPTIONS.SLNCLOSEOPT_DeleteProject, projectHierarchy, 0);
@@ -334,6 +324,8 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
         
         private void MoveProjectFolder(string fullProjectName, string newProjectDirectory)
         {
+            StatusBarHelper.Update("Moving the project within the file system...");
+
             var parentProjectDirectory = new DirectoryInfo(fullProjectName).Parent;
 
             if (parentProjectDirectory == null)
@@ -355,6 +347,8 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
         private Project AddProjectToSolution(SolutionFolder solutionFolder, string newProjectFileName, string fullProjectName, string newProjectDirectory)
         {
+            StatusBarHelper.Update("Adding the new project to the solution...");
+
             var parentProjectDirectory = new DirectoryInfo(fullProjectName).Parent;
 
             if (parentProjectDirectory == null)
@@ -384,6 +378,8 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
         private void ChangeAssemblyData(Project currentProject, string oldProjectName, string newProjectName, IVsHierarchy currentProjectHierarchy)
         {
+            StatusBarHelper.Update("Changing Assembly data...");
+
             var properties = currentProject.ProjectItems.Item("Properties");
             var assemblyInfo = properties.ProjectItems.Item("AssemblyInfo.cs");
 
@@ -435,6 +431,8 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
         private void ChangeProjectData(Project project, string oldProjectName, string newProjectName)
         {
+            StatusBarHelper.Update("Changing project data...");
+
             var defaultNamespace = project.Properties.Item("DefaultNamespace");
             var assemblyName = project.Properties.Item("AssemblyName");
 
@@ -452,6 +450,8 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
         private void SaveProject(Project project, IVsHierarchy projectHierarchy)
         {
+            StatusBarHelper.Update("Saving the renamed project...");
+
             if (project.IsDirty)
             {
                 RenameData.Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, projectHierarchy, 0);

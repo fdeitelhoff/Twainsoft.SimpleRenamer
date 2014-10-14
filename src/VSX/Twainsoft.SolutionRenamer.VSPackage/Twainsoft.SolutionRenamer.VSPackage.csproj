@@ -186,6 +186,8 @@
     <Compile Include="VSX\SolutionRenamer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="VSX\PkgCmdIdList.cs" />
+    <Compile Include="VSX\StatusBarHelper.cs" />
+    <Compile Include="VSX\VsMessageBox.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\Resources.resx">
