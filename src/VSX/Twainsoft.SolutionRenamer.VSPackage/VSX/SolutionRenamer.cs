@@ -41,15 +41,10 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
             RenameData = new RenameData();
 
             GetGlobalServices();
-
-            ProjectsWithReferences = new List<Project>();
         }
 
         private void OnRenameProject(object sender, EventArgs e)
         {
-            var progressDialog = new RenamingProgressDialog();
-
-
             try
             {
                 // Get the currently selected project within the solution explorer.
@@ -64,11 +59,13 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 }
 
                 // TODO: Check if there's another project with this name! (Where to check??)
+                // Projects with the same name cannot be in the same folder. Within the same solution it is no problem!
+                // Question: how are equal projects determined? Same folder name oder same project name? I think the folder name is the important one.
                 // This is the new project name the user typed in.
                 RenameData.NewProjectName = rename.GetProjectName();
 
                 // Check if this is necessary when the references check was refactored!
-                ProjectsWithReferences.Clear();
+                RenameData.ProjectsWithReferences.Clear();
 
                 // Save all changes that were made before the renaming process. Just for safety!
                 SaveSolution();
@@ -84,10 +81,10 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 var isStartupProject = IsStartupProject(currentProject);
 
                 var oldProjectName = currentProject.Name;
-                // This is a little bit scary: I need the old project path, before it gets moved. But this instance will have the new name after it gets renamed.
-                // Change this behavior!
-                OldProject = currentProject;
-                OldProjectName = oldProjectName;
+
+                // Before the project gets renamed we need to safe the old full name of it.
+                // This is needed later for the search of old references in other projects within the solution.
+                RenameData.RenamedProject = currentProject;
 
                 // Rename the project. This changes the project filename too!
                 currentProject.Name = RenameData.NewProjectName;
@@ -141,8 +138,6 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                 // Rebuild the complete solution.
                 RenameData.Dte.Solution.SolutionBuild.Build();
-                // Better this way?
-                //dte.Solution.SolutionBuild.BuildProject();
             }
             catch (COMException comException)
             {
@@ -155,10 +150,6 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
             catch (Exception exception)
             {
                 VsMessageBox.ShowErrorMessageBox("Unknown Exception", exception.ToString());
-            }
-            finally
-            {
-                progressDialog.Close();
             }
         }
 
@@ -254,36 +245,22 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
             foreach (Project proj in RenameData.Dte.Solution.Projects)
             {
-                    NavigateProject(proj);
+                NavigateProject(proj);
             }
         }
-
-        // Maybe this is doable in another way? This private field is used for data just for the navigate project code. Looks a little bit ugly.
-        private Project OldProject;
-        private string OldProjectName;
-        private List<Project> ProjectsWithReferences;
 
         private void NavigateProject(Project project)
         {
             if (project.Name != RenameData.NewProjectName)
             {
+                // The GUID points to a C# project. All other project types are excluded here.
                 if (project.Kind == "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}")
                 {
-                    //Debug.WriteLine("Project: " + project.Name);
-
                     CheckProjectReferences(project);
                 }
 
                 // We need to navigate all found project items. There could be a solution folder with some projects within.
-                NavigateProjectItems(project.ProjectItems);
-            }
-        }
-
-        private void NavigateProjectItems(ProjectItems projectItems)
-        {
-            if (projectItems != null)
-            {
-                foreach (ProjectItem projectItem in projectItems)
+                foreach (ProjectItem projectItem in project.ProjectItems)
                 {
                     if (projectItem.SubProject != null)
                     {
@@ -293,22 +270,30 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
             }
         }
 
-        private void CheckProjectReferences(Project proj)
+        private void CheckProjectReferences(Project project)
         {
-            var project = proj.Object as VSProject2;
+            var vsProject2 = project.Object as VSProject2;
 
-            var references = project.References as References2;
+            if (vsProject2 == null)
+            {
+                throw new InvalidOperationException("The Project Must Be Of The Type VSproject2!");
+            }
+
+            var references = vsProject2.References as References2;
+
+            if (references == null)
+            {
+                throw new InvalidOperationException("The References Must Be Of The Type References2!");
+            }
 
             foreach (Reference5 reference in references)
             {
-                // OldProjectName seems to be the new one!
-                // The references path is the DLL in the debug folder. That cannot be compared easily.
-                // Maybe SourceProject.FullName is better? Try it out in the next episode...
-                if (reference.SourceProject != null && reference.Name == RenameData.NewProjectName && reference.SourceProject.FullName == OldProject.FullName)
+                // SourceProject points to a project in this solution. If it's null, we have a reference to a framework library here.
+                // The full name of the source project and the renamed project must be equal. After the project is renamed the references are updated automatically!
+                // Check if this is necessary: && reference.Name == RenameData.NewProjectName 
+                if (reference.SourceProject != null && reference.SourceProject.FullName == RenameData.RenamedProject.FullName)
                 {
-                    //Debug.WriteLine(reference.Name + " " + reference.Path);
-
-                    ProjectsWithReferences.Add(proj);
+                    RenameData.ProjectsWithReferences.Add(project);
                 }
             }
         }
@@ -409,7 +394,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
         private void ChangeRenamedProjectReferences(Project currentProject)
         {
-            foreach (var proj in ProjectsWithReferences)
+            foreach (var proj in RenameData.ProjectsWithReferences)
             {
                 var project = proj.Object as VSProject2;
 
