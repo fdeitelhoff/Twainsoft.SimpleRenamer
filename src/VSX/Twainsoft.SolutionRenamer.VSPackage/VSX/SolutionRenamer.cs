@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -74,13 +73,11 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 var solutionFolder = GetSolutionFolder(currentProject);
 
                 // Get the file name and the parent directory of the current project before it gets renamed!
-                var projectFileName = currentProject.Name;
+                RenameData.OldProjectFileName = currentProject.Name;
                 var projectParentDirectory = GetProjectParentDirectory(currentProject);
 
                 // Check if the current project is the startup project before it gets renamed and temporarily deleted.
                 var isStartupProject = IsStartupProject(currentProject);
-
-                var oldProjectName = currentProject.Name;
 
                 // Before the project gets renamed we need to safe the old full name of it.
                 // This is needed later for the search of old references in other projects within the solution.
@@ -93,7 +90,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 IVsHierarchy currentProjectHierarchy;
                 RenameData.Solution.GetProjectOfUniqueName(currentProject.UniqueName, out currentProjectHierarchy);
 
-                if (projectFileName == projectParentDirectory)
+                if (RenameData.OldProjectFileName == projectParentDirectory)
                 {
                     // Check if other projects have references to the currently selected project. These references must be changed too!
                     CheckProjectsForReferences();
@@ -122,13 +119,13 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 ChangeRenamedProjectReferences(currentProject);
 
                 // Change some project data like the default namespace and the assembly name. 
-                ChangeProjectData(currentProject, oldProjectName, RenameData.NewProjectName);
+                ChangeProjectData(currentProject);
 
                 // Save the project after we made so many changes to it.
                 SaveProject(currentProject, currentProjectHierarchy);
 
                 // Change some data in the AssemblyInfo.cs file if those data matches the old project name! (AssemblyTitle and AssemblyProduct)
-                ChangeAssemblyData(currentProject, oldProjectName, RenameData.NewProjectName, currentProjectHierarchy);
+                ChangeAssemblyData(currentProject, currentProjectHierarchy);
 
                 // If the renamed project was the startup project, we need to refresh this setting after it was deleted.
                 if (isStartupProject)
@@ -361,9 +358,12 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                         Path.Combine(Path.Combine(parentProjectParentDirectory.FullName, newProjectDirectory), newProjectFileName));
         }
 
-        private void ChangeAssemblyData(Project currentProject, string oldProjectName, string newProjectName, IVsHierarchy currentProjectHierarchy)
+        private void ChangeAssemblyData(Project currentProject, IVsHierarchy currentProjectHierarchy)
         {
             StatusBarHelper.Update("Changing Assembly data...");
+
+            var newProjectName = RenameData.NewProjectName;
+            var oldProjectFileName = RenameData.OldProjectFileName;
 
             var properties = currentProject.ProjectItems.Item("Properties");
             var assemblyInfo = properties.ProjectItems.Item("AssemblyInfo.cs");
@@ -376,14 +376,14 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 throw new InvalidOperationException("AssemblyTitle Or AssemblyProduct Attribute Is Null!");
             }
 
-            if (assemblyTitle.Value.Contains(oldProjectName))
+            if (assemblyTitle.Value.Contains(oldProjectFileName))
             {
-                assemblyTitle.Value = assemblyTitle.Value.Replace(oldProjectName, newProjectName);
+                assemblyTitle.Value = assemblyTitle.Value.Replace(oldProjectFileName, newProjectName);
             }
 
-            if (assemblyProduct.Value.Contains(oldProjectName))
+            if (assemblyProduct.Value.Contains(oldProjectFileName))
             {
-                assemblyProduct.Value = assemblyProduct.Value.Replace(oldProjectName, newProjectName);
+                assemblyProduct.Value = assemblyProduct.Value.Replace(oldProjectFileName, newProjectName);
             }
 
             if (assemblyInfo.IsDirty)
@@ -414,22 +414,25 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
             }
         }
 
-        private void ChangeProjectData(Project project, string oldProjectName, string newProjectName)
+        private void ChangeProjectData(Project project)
         {
             StatusBarHelper.Update("Changing project data...");
+
+            var newProjectName = RenameData.NewProjectName;
+            var oldProjectFileName = RenameData.OldProjectFileName;
 
             var defaultNamespace = project.Properties.Item("DefaultNamespace");
             var assemblyName = project.Properties.Item("AssemblyName");
 
-            if (defaultNamespace.Value.ToString().Contains(oldProjectName))
+            if (defaultNamespace.Value.ToString().Contains(oldProjectFileName))
             {
                 defaultNamespace.Value = defaultNamespace.Value.ToString()
-                    .Replace(oldProjectName, newProjectName);
+                    .Replace(oldProjectFileName, newProjectName);
             }
 
-            if (assemblyName.Value.ToString().Contains(oldProjectName))
+            if (assemblyName.Value.ToString().Contains(oldProjectFileName))
             {
-                assemblyName.Value = assemblyName.Value.ToString().Replace(oldProjectName, newProjectName);
+                assemblyName.Value = assemblyName.Value.ToString().Replace(oldProjectFileName, newProjectName);
             }
         }
 

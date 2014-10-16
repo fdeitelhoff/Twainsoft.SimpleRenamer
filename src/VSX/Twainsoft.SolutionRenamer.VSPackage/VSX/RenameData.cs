@@ -14,6 +14,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
         public Project RenamedProject { get; set; }
 
         public List<Project> ProjectsWithReferences { get; private set; }
+        public string OldProjectFileName { get; set; }
 
         public RenameData()
         {
