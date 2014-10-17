@@ -50,7 +50,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 var currentProject = GetSelectedProject();
 
                 // Get the new project name from the user.
-                var rename = new RenameProjectDialog(currentProject.Name);
+                var rename = new RenameProjectDialog(currentProject);
                 var result = rename.ShowDialog();
                 if (!result.HasValue || !result.Value)
                 {
@@ -74,7 +74,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                 // Get the file name and the parent directory of the current project before it gets renamed!
                 RenameData.OldProjectFileName = currentProject.Name;
-                var projectParentDirectory = GetProjectParentDirectory(currentProject);
+                var projectParentDirectory = GetProjectParentDirectoryName(currentProject);
 
                 // Check if the current project is the startup project before it gets renamed and temporarily deleted.
                 var isStartupProject = IsStartupProject(currentProject);
@@ -188,7 +188,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
             return parentProject.Object as SolutionFolder;
         }
         
-        private string GetProjectParentDirectory(Project project)
+        private string GetProjectParentDirectoryName(Project project)
         {
             var parent = Directory.GetParent(project.FullName);
 

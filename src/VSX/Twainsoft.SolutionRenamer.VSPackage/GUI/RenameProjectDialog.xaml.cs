@@ -1,14 +1,23 @@
-﻿using System.Windows;
+﻿using System;
+using System.IO;
+using System.Windows;
+using System.Windows.Forms;
+using EnvDTE;
+using MessageBox = System.Windows.Forms.MessageBox;
 
 namespace Twainsoft.SolutionRenamer.VSPackage.GUI
 {
     public partial class RenameProjectDialog
     {
-        public RenameProjectDialog(string name)
+        private Project CurrentProject { get; set; }
+
+        public RenameProjectDialog(Project project)
         {
             InitializeComponent();
 
-            ProjectName.Text = name;
+            CurrentProject = project;
+
+            ProjectName.Text = project.Name;
             ProjectName.Focus();
             ProjectName.SelectAll();
         }
@@ -20,9 +29,34 @@ namespace Twainsoft.SolutionRenamer.VSPackage.GUI
 
         private void Rename_Click(object sender, RoutedEventArgs e)
         {
-            DialogResult = true;
+            var directory = new FileInfo(CurrentProject.FullName).Directory;
 
-            Close();
+            if (directory == null)
+            {
+                throw new InvalidOperationException();
+            }
+
+            var parentDirectory = directory.Parent;
+
+            if (parentDirectory == null)
+            {
+                throw new InvalidOperationException();
+            }
+
+            if (Directory.Exists(Path.Combine(parentDirectory.FullName, GetProjectName())))
+            {
+                MessageBox.Show(
+                    string.Format(
+                        "The project '{0}' already exists in the solution respectively the file system. Please choose another project name.",
+                        GetProjectName()),
+                    "Project already exists", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            else
+            {
+                DialogResult = true;
+
+                Close();
+            }
         }
     }
 }

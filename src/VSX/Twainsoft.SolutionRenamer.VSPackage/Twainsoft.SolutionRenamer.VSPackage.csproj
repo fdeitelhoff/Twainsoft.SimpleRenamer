@@ -171,9 +171,6 @@
     <Compile Include="GUI\RenameProjectDialog.xaml.cs">
       <DependentUpon>RenameProjectDialog.xaml</DependentUpon>
     </Compile>
-    <Compile Include="GUI\RenamingProgressDialog.xaml.cs">
-      <DependentUpon>RenamingProgressDialog.xaml</DependentUpon>
-    </Compile>
     <Compile Include="VSX\Guids.cs" />
     <Compile Include="Resources\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -221,10 +218,6 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="GUI\RenameProjectDialog.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="GUI\RenamingProgressDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
