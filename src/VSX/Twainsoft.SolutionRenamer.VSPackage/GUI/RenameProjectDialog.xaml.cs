@@ -43,6 +43,8 @@ namespace Twainsoft.SolutionRenamer.VSPackage.GUI
                 throw new InvalidOperationException();
             }
 
+            // Projects with the same name cannot be in the same folder due to the same folder names.
+            // Within the same solution it is no problem! 
             if (Directory.Exists(Path.Combine(parentDirectory.FullName, GetProjectName())))
             {
                 MessageBox.Show(

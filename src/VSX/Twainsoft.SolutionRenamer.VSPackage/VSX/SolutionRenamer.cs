@@ -57,9 +57,6 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                     return;
                 }
 
-                // TODO: Check if there's another project with this name! (Where to check??)
-                // Projects with the same name cannot be in the same folder. Within the same solution it is no problem!
-                // Question: how are equal projects determined? Same folder name oder same project name? I think the folder name is the important one.
                 // This is the new project name the user typed in.
                 RenameData.NewProjectName = rename.GetProjectName();
 
@@ -235,7 +232,6 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
             return selectedObject as Project;
         }
 
-        // There are events for references added, removed and changed. Maybe this is useful in the future?
         private void CheckProjectsForReferences()
         {
             StatusBarHelper.Update("Checking other projects for references to the renamed one...");
