@@ -51,12 +51,16 @@ namespace Twainsoft.SolutionRenamer.VSPackage.GUI
                     string.Format(
                         "The project '{0}' already exists in the solution respectively the file system. Please choose another project name.",
                         GetProjectName()),
-                    "Project already exists", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    "Project already exists", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-            else
+            else if (CurrentProject.Name != GetProjectName())
             {
                 DialogResult = true;
 
+                Close();
+            }
+            else
+            {
                 Close();
             }
         }
