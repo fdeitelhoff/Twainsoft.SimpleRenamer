@@ -244,6 +244,8 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
         private void NavigateProject(Project project)
         {
+            System.Diagnostics.Debug.WriteLine("Name {0} - UniqueName {1}", project.Name, project.UniqueName);
+
             if (project.Name != RenameData.NewProjectName)
             {
                 // The GUID points to a C# project. All other project types are excluded here.
@@ -252,7 +254,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                     CheckProjectReferences(project);
                 }
 
-                // We need to navigate all found project items. There could be a solution folder with some projects within.
+                // We need to navigate all found project items. There could be a solution folder with projects within.
                 foreach (ProjectItem projectItem in project.ProjectItems)
                 {
                     if (projectItem.SubProject != null)
