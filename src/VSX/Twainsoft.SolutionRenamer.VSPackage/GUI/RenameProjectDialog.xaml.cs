@@ -3,18 +3,22 @@ using System.IO;
 using System.Windows;
 using System.Windows.Forms;
 using EnvDTE;
+using Microsoft.VisualStudio.Shell.Interop;
+using Twainsoft.SolutionRenamer.VSPackage.VSX;
 using MessageBox = System.Windows.Forms.MessageBox;
 
 namespace Twainsoft.SolutionRenamer.VSPackage.GUI
 {
     public partial class RenameProjectDialog
     {
+        private RenameData RenameData { get; set; }
         private Project CurrentProject { get; set; }
 
-        public RenameProjectDialog(Project project)
+        public RenameProjectDialog(RenameData renameData, Project project)
         {
             InitializeComponent();
 
+            RenameData = renameData;
             CurrentProject = project;
 
             ProjectName.Text = project.Name;
@@ -24,11 +28,12 @@ namespace Twainsoft.SolutionRenamer.VSPackage.GUI
 
         public string GetProjectName()
         {
-            return ProjectName.Text.Trim();
+            return Path.GetFileNameWithoutExtension(ProjectName.Text.Trim());
         }
 
         private void Rename_Click(object sender, RoutedEventArgs e)
         {
+            var solutionDirectory = new FileInfo(RenameData.Dte.Solution.FileName).Directory;
             var directory = new FileInfo(CurrentProject.FullName).Directory;
 
             if (directory == null)
@@ -36,16 +41,18 @@ namespace Twainsoft.SolutionRenamer.VSPackage.GUI
                 throw new InvalidOperationException();
             }
 
-            var parentDirectory = directory.Parent;
+            var projectDirectory = directory.ToString().Replace(solutionDirectory + @"\", "");
+            var projectFileExtension = Path.GetExtension(CurrentProject.FileName);
 
-            if (parentDirectory == null)
-            {
-                throw new InvalidOperationException();
-            }
+            var projectFileName = GetProjectName() + projectFileExtension;
+            var uniqueName = Path.Combine(projectDirectory, projectFileName);
+
+            IVsHierarchy currentProjectHierarchy;
+            RenameData.Solution.GetProjectOfUniqueName(uniqueName, out currentProjectHierarchy);
 
             // Projects with the same name cannot be in the same folder due to the same folder names.
             // Within the same solution it is no problem! 
-            if (Directory.Exists(Path.Combine(parentDirectory.FullName, GetProjectName())))
+            if (currentProjectHierarchy != null) //Directory.Exists(Path.Combine(parentDirectory.FullName, GetProjectName())))
             {
                 MessageBox.Show(
                     string.Format(

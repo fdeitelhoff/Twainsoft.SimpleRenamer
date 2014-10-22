@@ -50,7 +50,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 var currentProject = GetSelectedProject();
 
                 // Get the new project name from the user.
-                var renameDialog = new RenameProjectDialog(currentProject)
+                var renameDialog = new RenameProjectDialog(RenameData, currentProject)
                 {
                     Owner = System.Windows.Application.Current.MainWindow
                 };
