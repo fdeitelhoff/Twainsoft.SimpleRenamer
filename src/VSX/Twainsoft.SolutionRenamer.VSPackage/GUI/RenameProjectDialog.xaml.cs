@@ -33,6 +33,8 @@ namespace Twainsoft.SolutionRenamer.VSPackage.GUI
 
         private void Rename_Click(object sender, RoutedEventArgs e)
         {
+            var uniqueName = "";
+
             var solutionDirectory = new FileInfo(RenameData.Dte.Solution.FileName).Directory;
             var directory = new FileInfo(CurrentProject.FullName).Directory;
 
@@ -41,11 +43,22 @@ namespace Twainsoft.SolutionRenamer.VSPackage.GUI
                 throw new InvalidOperationException();
             }
 
-            var projectDirectory = directory.ToString().Replace(solutionDirectory + @"\", "");
-            var projectFileExtension = Path.GetExtension(CurrentProject.FileName);
+            // Check if the project already exists.
+            if (Path.GetFileNameWithoutExtension(CurrentProject.FileName) != directory.Name)
+            {
+                var projectDirectory = directory.ToString().Replace(solutionDirectory + @"\", "");
+                var projectFileExtension = Path.GetExtension(CurrentProject.FileName);
 
-            var projectFileName = GetProjectName() + projectFileExtension;
-            var uniqueName = Path.Combine(projectDirectory, projectFileName);
+                var projectFileName = GetProjectName() + projectFileExtension;
+                uniqueName = Path.Combine(projectDirectory, projectFileName);
+            }
+            else
+            {
+                var projectFileExtension = Path.GetExtension(CurrentProject.FileName);
+
+                var projectFileName = GetProjectName() + projectFileExtension;
+                uniqueName = Path.Combine(GetProjectName(), projectFileName);
+            }
 
             IVsHierarchy currentProjectHierarchy;
             RenameData.Solution.GetProjectOfUniqueName(uniqueName, out currentProjectHierarchy);
@@ -56,7 +69,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.GUI
             {
                 MessageBox.Show(
                     string.Format(
-                        "The project '{0}' already exists in the solution respectively the file system. Please choose another project name.",
+                        "The project '{0}' already exists in the solution respectively the file system. Please choose a different project name.",
                         GetProjectName()),
                     "Project already exists", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
