@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Windows;
 using System.Windows.Forms;
 using EnvDTE;
+using EnvDTE80;
 using Microsoft.VisualStudio.Shell.Interop;
 using Twainsoft.SolutionRenamer.VSPackage.VSX;
 using MessageBox = System.Windows.Forms.MessageBox;
@@ -33,6 +35,8 @@ namespace Twainsoft.SolutionRenamer.VSPackage.GUI
 
         private void Rename_Click(object sender, RoutedEventArgs e)
         {
+            CheckProjectsForReferences();
+
             var uniqueName = "";
 
             var solutionDirectory = new FileInfo(RenameData.Dte.Solution.FileName).Directory;
@@ -83,6 +87,60 @@ namespace Twainsoft.SolutionRenamer.VSPackage.GUI
             {
                 Close();
             }
+        }
+
+        
+
+        private void CheckProjectsForReferences()
+        {
+            //StatusBarHelper.Update("Checking other projects for references to the renamed one...");
+
+            foreach (Project proj in RenameData.Dte.Solution.Projects)
+            {
+                NavigateProject(proj);
+            }
+        }
+
+        private void NavigateProject(Project project)
+        {
+            System.Diagnostics.Debug.WriteLine("Name {0} - UniqueName {1} - Parent {2}", project.Name, project.UniqueName, project.ParentProjectItem);
+
+            if (project.Name != RenameData.NewProjectName)
+            {
+                //// The GUID points to a C# project. All other project types are excluded here.
+                //if (project.Kind == "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}")
+                //{
+                    
+                //}
+
+
+
+                // We need to navigate all found project items. There could be a solution folder with projects within.
+                foreach (ProjectItem projectItem in project.ProjectItems)
+                {
+                    if (projectItem.SubProject != null)
+                    {
+                        NavigateProject(projectItem.SubProject);
+                    }
+                }
+            }
+        }
+
+        private SolutionFolder GetSolutionFolder(Project project)
+        {
+            if (project.ParentProjectItem == null)
+            {
+                return null;
+            }
+
+            var parentProject = project.ParentProjectItem.Collection.Parent as Project;
+
+            if (parentProject == null)
+            {
+                throw new InvalidOperationException("The Parent Project Of The Current Selected Project cannot be determined!");
+            }
+
+            return parentProject.Object as SolutionFolder;
         }
     }
 }
