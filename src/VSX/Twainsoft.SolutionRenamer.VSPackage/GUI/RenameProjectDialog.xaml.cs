@@ -16,6 +16,8 @@ namespace Twainsoft.SolutionRenamer.VSPackage.GUI
         private RenameData RenameData { get; set; }
         private Project CurrentProject { get; set; }
 
+        private Dictionary<object, List<string>> ParentToProjects { get; set; }
+
         public RenameProjectDialog(RenameData renameData, Project project)
         {
             InitializeComponent();
@@ -23,21 +25,19 @@ namespace Twainsoft.SolutionRenamer.VSPackage.GUI
             RenameData = renameData;
             CurrentProject = project;
 
+            ParentToProjects = new Dictionary<object, List<string>>();
+
+            // Set the current project name within the GUI.
             ProjectName.Text = project.Name;
             ProjectName.Focus();
             ProjectName.SelectAll();
         }
 
-        public string GetProjectName()
-        {
-            return Path.GetFileNameWithoutExtension(ProjectName.Text.Trim());
-        }
-
         private void Rename_Click(object sender, RoutedEventArgs e)
         {
-            CheckProjectsForReferences();
+            var newProjectName = GetProjectName();
 
-            var uniqueName = "";
+            string uniqueName;
 
             var solutionDirectory = new FileInfo(RenameData.Dte.Solution.FileName).Directory;
             var directory = new FileInfo(CurrentProject.FullName).Directory;
@@ -46,38 +46,41 @@ namespace Twainsoft.SolutionRenamer.VSPackage.GUI
             {
                 throw new InvalidOperationException();
             }
-
-            // Check if the project already exists.
+            
             if (Path.GetFileNameWithoutExtension(CurrentProject.FileName) != directory.Name)
             {
                 var projectDirectory = directory.ToString().Replace(solutionDirectory + @"\", "");
                 var projectFileExtension = Path.GetExtension(CurrentProject.FileName);
 
-                var projectFileName = GetProjectName() + projectFileExtension;
+                var projectFileName = newProjectName + projectFileExtension;
                 uniqueName = Path.Combine(projectDirectory, projectFileName);
             }
             else
             {
                 var projectFileExtension = Path.GetExtension(CurrentProject.FileName);
 
-                var projectFileName = GetProjectName() + projectFileExtension;
-                uniqueName = Path.Combine(GetProjectName(), projectFileName);
+                var projectFileName = newProjectName + projectFileExtension;
+                uniqueName = Path.Combine(newProjectName, projectFileName);
             }
 
+            // Check if the project already exists.
             IVsHierarchy currentProjectHierarchy;
             RenameData.Solution.GetProjectOfUniqueName(uniqueName, out currentProjectHierarchy);
 
-            // Projects with the same name cannot be in the same folder due to the same folder names.
-            // Within the same solution it is no problem! 
-            if (currentProjectHierarchy != null) //Directory.Exists(Path.Combine(parentDirectory.FullName, GetProjectName())))
+            // Check if there's a project on the same level (solution folder) with the same name.
+            var projectExists = CheckProjects(newProjectName);
+
+            // Are there projects with the same name on the same hierarchy level or within the same folder name?
+            // => That's not allowed!
+            if (projectExists || currentProjectHierarchy != null)
             {
                 MessageBox.Show(
                     string.Format(
                         "The project '{0}' already exists in the solution respectively the file system. Please choose a different project name.",
-                        GetProjectName()),
-                    "Project already exists", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        newProjectName),
+                    string.Format("Project '{0}' already exists", newProjectName), MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-            else if (CurrentProject.Name != GetProjectName())
+            else if (CurrentProject.Name != newProjectName)
             {
                 DialogResult = true;
 
@@ -89,39 +92,44 @@ namespace Twainsoft.SolutionRenamer.VSPackage.GUI
             }
         }
 
-        
-
-        private void CheckProjectsForReferences()
+        public string GetProjectName()
         {
-            //StatusBarHelper.Update("Checking other projects for references to the renamed one...");
+            return Path.GetFileNameWithoutExtension(ProjectName.Text.Trim());
+        }
+
+        private bool CheckProjects(string newProjectName)
+        {
+            ParentToProjects.Clear();
 
             foreach (Project proj in RenameData.Dte.Solution.Projects)
             {
                 NavigateProject(proj);
             }
+
+            var parent = GetSolutionFolder(CurrentProject) ?? (object)"no parent";
+
+            return ParentToProjects[parent].Contains(newProjectName);
         }
 
         private void NavigateProject(Project project)
         {
-            System.Diagnostics.Debug.WriteLine("Name {0} - UniqueName {1} - Parent {2}", project.Name, project.UniqueName, project.ParentProjectItem);
+            var parent = GetSolutionFolder(project) ?? (object) "no parent";
 
-            if (project.Name != RenameData.NewProjectName)
+            if (!ParentToProjects.ContainsKey(parent))
             {
-                //// The GUID points to a C# project. All other project types are excluded here.
-                //if (project.Kind == "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}")
-                //{
-                    
-                //}
+                ParentToProjects.Add(parent, new List<string> {project.Name});
+            }
+            else
+            {
+                ParentToProjects[parent].Add(project.Name);
+            }
 
-
-
-                // We need to navigate all found project items. There could be a solution folder with projects within.
-                foreach (ProjectItem projectItem in project.ProjectItems)
+            // We need to navigate all found project items. There could be a solution folder with projects within.
+            foreach (ProjectItem projectItem in project.ProjectItems)
+            {
+                if (projectItem.SubProject != null)
                 {
-                    if (projectItem.SubProject != null)
-                    {
-                        NavigateProject(projectItem.SubProject);
-                    }
+                    NavigateProject(projectItem.SubProject);
                 }
             }
         }
