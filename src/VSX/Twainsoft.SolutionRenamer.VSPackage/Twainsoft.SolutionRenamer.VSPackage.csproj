@@ -179,7 +179,6 @@
     </Compile>
     <Compile Include="VSX\GlobalSuppressions.cs" />
     <Compile Include="VSX\RenameData.cs" />
-    <Compile Include="VSX\SolutionEventsHandler.cs" />
     <Compile Include="VSX\SolutionRenamer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="VSX\PkgCmdIdList.cs" />
