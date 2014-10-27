@@ -32,9 +32,15 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 return;
             }
 
+            // The context menu entry.
             var contextMenuCommandId = new CommandID(GuidList.SolutionRenamerVsPackageCmdSet, (int)PkgCmdIdList.ContextMenuCommandId);
             var contextMenu = new MenuCommand(OnRenameProject, contextMenuCommandId);
             mcs.AddCommand(contextMenu);
+
+            // The Solution Explorer tool bar entry.
+            var solutionExplorerCommandId = new CommandID(GuidList.SolutionRenamerVsPackageCmdSet, (int)PkgCmdIdList.SolutionExplorerCommandId);
+            var solutionExplorerMenu = new MenuCommand(OnRenameProject, solutionExplorerCommandId);
+            mcs.AddCommand(solutionExplorerMenu);
 
             // Data we need all the time during the rename process.
             RenameData = new RenameData();

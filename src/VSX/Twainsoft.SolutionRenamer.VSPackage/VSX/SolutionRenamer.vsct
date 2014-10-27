@@ -10,13 +10,28 @@
   <Commands package="guidTwainsoft_SolutionRenamer_VSPackagePkg">
     
     <Groups>
-      <Group guid="guidTwainsoft_SolutionRenamer_VSPackageCmdSet" id="MyMenuGroup" priority="0x0001">
+      <Group guid="guidTwainsoft_SolutionRenamer_VSPackageCmdSet" id="SolutionToolbarGroup" priority="0xF000">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_TOOL_PROJWIN"/>
+      </Group>
+      <Group guid="guidTwainsoft_SolutionRenamer_VSPackageCmdSet" id="MyMenuGroup" priority="0x0700">
         <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_PROJNODE"/>
       </Group>
     </Groups>
     
     <!-- Buttons section. -->
     <Buttons>
+      <Button guid="guidTwainsoft_SolutionRenamer_VSPackageCmdSet" id="cmdidTestCmd" priority="0x0100" type="Button">
+        <Parent guid="guidTwainsoft_SolutionRenamer_VSPackageCmdSet" id="SolutionToolbarGroup" />
+        <Icon guid="guidImages" id="renameIcon" />
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <Strings>
+          <CommandName>cmdidTestCmd</CommandName>
+          <ButtonText>Rename Advanced...</ButtonText>
+          <ToolTipText>Rename The Project With Additional Refactorings.</ToolTipText>
+        </Strings>
+      </Button>
+      
       <Button guid="guidTwainsoft_SolutionRenamer_VSPackageCmdSet" id="cmdidMyTool" priority="0x0001" type="Button">
         <Parent guid="guidTwainsoft_SolutionRenamer_VSPackageCmdSet" id="MyMenuGroup" />
         <Icon guid="guidImages" id="renameIcon" />
@@ -34,6 +49,11 @@
 
   </Commands>
 
+  <VisibilityConstraints>
+    <VisibilityItem guid="guidTwainsoft_SolutionRenamer_VSPackageCmdSet" id="cmdidTestCmd" context="UICONTEXT_SolutionHasSingleProject" />
+    <VisibilityItem guid="guidTwainsoft_SolutionRenamer_VSPackageCmdSet" id="cmdidTestCmd" context="UICONTEXT_SolutionHasMultipleProjects" />
+  </VisibilityConstraints>
+
   <KeyBindings>
       <KeyBinding guid="guidTwainsoft_SolutionRenamer_VSPackageCmdSet" id="cmdidMyTool" key1="VK_F2" mod1="SHIFT" editor="guidVSStd97" />
   </KeyBindings>
@@ -44,10 +64,11 @@
     
     <!-- This is the guid used to group the menu commands together -->
     <GuidSymbol name="guidTwainsoft_SolutionRenamer_VSPackageCmdSet" value="{3ea51fcb-84e7-4277-98f1-609cb500857e}">
-
+      <IDSymbol name="SolutionToolbarGroup" value="0x0190"/>
       <IDSymbol name="MyMenuGroup" value="0x1020" />
       <IDSymbol name="cmdidMyCommand" value="0x0100" />
       <IDSymbol name="cmdidMyTool" value="0x0101" />
+      <IDSymbol name="cmdidTestCmd" value="0x0102" />
     </GuidSymbol>
     
     <GuidSymbol name="guidImages" value="{20abd394-d992-46d6-a4db-35ae8ed55fb5}" >
