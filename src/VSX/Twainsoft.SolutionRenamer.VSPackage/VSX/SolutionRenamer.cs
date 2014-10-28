@@ -32,20 +32,30 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 return;
             }
 
+            // The Solution Explorer tool bar entry.
+            var solutionExplorerCommandId = new CommandID(GuidList.SolutionRenamerVsPackageCmdSet, (int)PkgCmdIdList.SolutionExplorerCommandId);
+            var solutionExplorerMenu = new OleMenuCommand(OnRenameProject, solutionExplorerCommandId);
+            solutionExplorerMenu.BeforeQueryStatus += SolutionExplorerMenuOnBeforeQueryStatus;
+            mcs.AddCommand(solutionExplorerMenu);
+
             // The context menu entry.
             var contextMenuCommandId = new CommandID(GuidList.SolutionRenamerVsPackageCmdSet, (int)PkgCmdIdList.ContextMenuCommandId);
             var contextMenu = new MenuCommand(OnRenameProject, contextMenuCommandId);
             mcs.AddCommand(contextMenu);
 
-            // The Solution Explorer tool bar entry.
-            var solutionExplorerCommandId = new CommandID(GuidList.SolutionRenamerVsPackageCmdSet, (int)PkgCmdIdList.SolutionExplorerCommandId);
-            var solutionExplorerMenu = new MenuCommand(OnRenameProject, solutionExplorerCommandId);
-            mcs.AddCommand(solutionExplorerMenu);
-
             // Data we need all the time during the rename process.
             RenameData = new RenameData();
 
             GetGlobalServices();
+        }
+
+        private void SolutionExplorerMenuOnBeforeQueryStatus(object sender, EventArgs eventArgs)
+        {
+            var myCommand = sender as OleMenuCommand;
+            if (null != myCommand)
+            {
+                Console.WriteLine();
+            }
         }
 
         private void OnRenameProject(object sender, EventArgs e)
@@ -227,7 +237,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
                 out projectItemId,
                 out multiItemSelect,
                 out selectionContainerPointer);
-
+            
             var selectedHierarchy = Marshal.GetTypedObjectForIUnknown(
                 hierarchyPointer, typeof (IVsHierarchy)) as IVsHierarchy;
 
