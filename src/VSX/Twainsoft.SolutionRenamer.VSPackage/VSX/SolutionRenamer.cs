@@ -51,11 +51,18 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
         private void SolutionExplorerMenuOnBeforeQueryStatus(object sender, EventArgs eventArgs)
         {
-            var myCommand = sender as OleMenuCommand;
-            if (null != myCommand)
+            var solutionExplorerCommand = sender as OleMenuCommand;
+            if (solutionExplorerCommand != null)
             {
-                Console.WriteLine();
+                var project = GetSelectedProject();
+
+                solutionExplorerCommand.Visible = ProjectTypesValid(project);
             }
+        }
+
+        private bool ProjectTypesValid(Project project)
+        {
+            return project != null && project.Kind == "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}";
         }
 
         private void OnRenameProject(object sender, EventArgs e)
@@ -64,6 +71,13 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
             {
                 // Get the currently selected project within the solution explorer.
                 var currentProject = GetSelectedProject();
+
+                // Check if there's a project selected and if it's a C# project. All other types aren't yet supported.
+                // (And we don't allow renaming on solution folders.)
+                if (!ProjectTypesValid(currentProject))
+                {
+                    return;
+                }
 
                 // Get the new project name from the user.
                 var renameDialog = new RenameProjectDialog(RenameData, currentProject)
