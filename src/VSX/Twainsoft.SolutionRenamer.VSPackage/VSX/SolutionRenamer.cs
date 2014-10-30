@@ -56,11 +56,11 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
             {
                 var project = GetSelectedProject();
 
-                solutionExplorerCommand.Visible = ProjectTypesValid(project);
+                solutionExplorerCommand.Visible = IsProjectTypeValid(project);
             }
         }
 
-        private bool ProjectTypesValid(Project project)
+        private bool IsProjectTypeValid(Project project)
         {
             return project != null && project.Kind == "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}";
         }
@@ -74,7 +74,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.VSX
 
                 // Check if there's a project selected and if it's a C# project. All other types aren't yet supported.
                 // (And we don't allow renaming on solution folders.)
-                if (!ProjectTypesValid(currentProject))
+                if (!IsProjectTypeValid(currentProject))
                 {
                     return;
                 }

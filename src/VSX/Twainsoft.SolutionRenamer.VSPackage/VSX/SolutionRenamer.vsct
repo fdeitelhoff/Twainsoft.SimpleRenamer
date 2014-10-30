@@ -9,18 +9,16 @@
 
   <Commands package="TwainsoftSimpleRenamerPackage">
     
+    <!-- Groups section. -->
     <Groups>
       <Group guid="TwainsoftSimpleRenamerCommandSet" id="SolutionToolbarGroup" priority="0xF000">
         <Parent guid="guidSHLMainMenu" id="IDM_VS_TOOL_PROJWIN"/>
-      </Group>
-      <Group guid="TwainsoftSimpleRenamerCommandSet" id="ProjectContextMenuGroup" priority="0x0700">
-        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_PROJNODE"/>
       </Group>
     </Groups>
     
     <!-- Buttons section. -->
     <Buttons>
-      <Button guid="TwainsoftSimpleRenamerCommandSet" id="RenameProjectSolutionExplorerButton" priority="0x0100" type="Button">
+      <Button guid="TwainsoftSimpleRenamerCommandSet" id="RenameProjectSolutionExplorerButton" priority="0x0001" type="Button">
         <Parent guid="TwainsoftSimpleRenamerCommandSet" id="SolutionToolbarGroup" />
         <Icon guid="guidImages" id="renameIcon" />
         <CommandFlag>DefaultInvisible</CommandFlag>
@@ -32,8 +30,8 @@
         </Strings>
       </Button>
       
-      <Button guid="TwainsoftSimpleRenamerCommandSet" id="RenameProjectContextMenuButton" priority="0x0001" type="Button">
-        <Parent guid="TwainsoftSimpleRenamerCommandSet" id="ProjectContextMenuGroup" />
+      <Button guid="TwainsoftSimpleRenamerCommandSet" id="RenameProjectContextMenuButton" priority="0x1000" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_CTXT_PROJECT_TRANSFER" />
         <Icon guid="guidImages" id="renameIcon" />
         <Strings>
           <ButtonText>Rename Advanced...</ButtonText>
@@ -65,7 +63,6 @@
     <!-- This is the guid used to group the menu commands together -->
     <GuidSymbol name="TwainsoftSimpleRenamerCommandSet" value="{3ea51fcb-84e7-4277-98f1-609cb500857e}">
       <IDSymbol name="SolutionToolbarGroup" value="0x0190"/>
-      <IDSymbol name="ProjectContextMenuGroup" value="0x1020" />
       <IDSymbol name="RenameProjectContextMenuButton" value="0x0101" />
       <IDSymbol name="RenameProjectSolutionExplorerButton" value="0x0102" />
     </GuidSymbol>
