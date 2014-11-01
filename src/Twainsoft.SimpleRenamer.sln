@@ -5,7 +5,7 @@ VisualStudioVersion = 12.0.30723.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "VSX", "VSX", "{724B2920-77C4-4543-A69D-FB1647DBA8DB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Twainsoft.SolutionRenamer.VSPackage", "VSX\Twainsoft.SolutionRenamer.VSPackage\Twainsoft.SolutionRenamer.VSPackage.csproj", "{824F2392-E8AD-4B53-94A3-4CC81A628811}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Twainsoft.SimpleRenamer.VSPackage", "VSX\Twainsoft.SimpleRenamer.VSPackage\Twainsoft.SimpleRenamer.VSPackage.csproj", "{824F2392-E8AD-4B53-94A3-4CC81A628811}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
