@@ -74,6 +74,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.GUI
             // => That's not allowed!
             if (projectExists || currentProjectHierarchy != null)
             {
+                // ToDo: Change this to the WPF counterpart!
                 MessageBox.Show(
                     string.Format(
                         "The project '{0}' already exists in the solution respectively the file system. Please choose a different project name.",
@@ -94,7 +95,7 @@ namespace Twainsoft.SolutionRenamer.VSPackage.GUI
 
         public string GetProjectName()
         {
-            return Path.GetFileNameWithoutExtension(ProjectName.Text.Trim());
+            return ProjectName.Text.Trim().Replace(".csproj", "");
         }
 
         private bool CheckProjects(string newProjectName)
