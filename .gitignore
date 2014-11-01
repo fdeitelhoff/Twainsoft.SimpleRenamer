@@ -172,4 +172,4 @@ UpgradeLog*.htm
 
 # Microsoft Fakes
 FakesAssemblies/
-/src/Twainsoft.SolutionRenamer.sln.ide
+/src/Twainsoft.SimpleRenamer.sln.ide
