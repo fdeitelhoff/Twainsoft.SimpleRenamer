@@ -2,7 +2,7 @@
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 
-namespace Twainsoft.SolutionRenamer.VSPackage.VSX
+namespace Twainsoft.SimpleRenamer.VSPackage.VSX
 {
     public enum VsMessageResult
     {

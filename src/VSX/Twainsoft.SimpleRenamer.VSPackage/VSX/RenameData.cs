@@ -3,7 +3,7 @@ using EnvDTE;
 using EnvDTE80;
 using Microsoft.VisualStudio.Shell.Interop;
 
-namespace Twainsoft.SolutionRenamer.VSPackage.VSX
+namespace Twainsoft.SimpleRenamer.VSPackage.VSX
 {
     public class RenameData
     {

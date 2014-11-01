@@ -2,14 +2,12 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Windows;
-using System.Windows.Forms;
 using EnvDTE;
 using EnvDTE80;
 using Microsoft.VisualStudio.Shell.Interop;
-using Twainsoft.SolutionRenamer.VSPackage.VSX;
-using MessageBox = System.Windows.Forms.MessageBox;
+using Twainsoft.SimpleRenamer.VSPackage.VSX;
 
-namespace Twainsoft.SolutionRenamer.VSPackage.GUI
+namespace Twainsoft.SimpleRenamer.VSPackage.GUI
 {
     public partial class RenameProjectDialog
     {
@@ -74,12 +72,12 @@ namespace Twainsoft.SolutionRenamer.VSPackage.GUI
             // => That's not allowed!
             if (projectExists || currentProjectHierarchy != null)
             {
-                // ToDo: Change this to the WPF counterpart!
-                MessageBox.Show(
+                MessageBox.Show(this,
                     string.Format(
                         "The project '{0}' already exists in the solution respectively the file system. Please choose a different project name.",
                         newProjectName),
-                    string.Format("Project '{0}' already exists", newProjectName), MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    string.Format("Project '{0}' already exists", newProjectName), MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
             else if (CurrentProject.Name != newProjectName)
             {

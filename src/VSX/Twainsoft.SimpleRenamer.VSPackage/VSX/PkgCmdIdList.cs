@@ -1,4 +1,4 @@
-﻿namespace Twainsoft.SolutionRenamer.VSPackage.VSX
+﻿namespace Twainsoft.SimpleRenamer.VSPackage.VSX
 {
     static class PkgCmdIdList
     {

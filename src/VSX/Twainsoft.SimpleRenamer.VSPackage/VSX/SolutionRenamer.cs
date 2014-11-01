@@ -7,11 +7,11 @@ using EnvDTE80;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using Twainsoft.SolutionRenamer.VSPackage.GUI;
+using Twainsoft.SimpleRenamer.VSPackage.GUI;
 using VSLangProj110;
 using VSLangProj80;
 
-namespace Twainsoft.SolutionRenamer.VSPackage.VSX
+namespace Twainsoft.SimpleRenamer.VSPackage.VSX
 {
     [PackageRegistration(UseManagedResourcesOnly = true)]
     [InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)]
