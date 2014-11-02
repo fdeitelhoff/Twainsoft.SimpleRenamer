@@ -2,11 +2,13 @@
 using System.ComponentModel.Design;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Windows;
 using EnvDTE;
 using EnvDTE80;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using NLog;
 using Twainsoft.SimpleRenamer.VSPackage.GUI;
 using VSLangProj110;
 using VSLangProj80;
@@ -21,10 +23,13 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
     public sealed class SolutionRenamer : Package
     {
         private RenameData RenameData { get; set; }
+        private static Logger Logger { get; set; }
 
         protected override void Initialize()
         {
             base.Initialize();
+
+            Logger = LogManager.GetCurrentClassLogger();
 
             var mcs = GetService(typeof(IMenuCommandService)) as OleMenuCommandService;
             if (mcs == null)
@@ -35,12 +40,13 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
             // The Solution Explorer tool bar entry.
             var solutionExplorerCommandId = new CommandID(GuidList.SolutionRenamerVsPackageCmdSet, (int)PkgCmdIdList.SolutionExplorerCommandId);
             var solutionExplorerMenu = new OleMenuCommand(OnRenameProject, solutionExplorerCommandId);
-            solutionExplorerMenu.BeforeQueryStatus += SolutionExplorerMenuOnBeforeQueryStatus;
+            solutionExplorerMenu.BeforeQueryStatus += RenameMenuEntriesOnBeforeQueryStatus;
             mcs.AddCommand(solutionExplorerMenu);
 
             // The context menu entry.
             var contextMenuCommandId = new CommandID(GuidList.SolutionRenamerVsPackageCmdSet, (int)PkgCmdIdList.ContextMenuCommandId);
-            var contextMenu = new MenuCommand(OnRenameProject, contextMenuCommandId);
+            var contextMenu = new OleMenuCommand(OnRenameProject, contextMenuCommandId);
+            contextMenu.BeforeQueryStatus += RenameMenuEntriesOnBeforeQueryStatus;
             mcs.AddCommand(contextMenu);
 
             // Data we need all the time during the rename process.
@@ -49,7 +55,7 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
             GetGlobalServices();
         }
 
-        private void SolutionExplorerMenuOnBeforeQueryStatus(object sender, EventArgs eventArgs)
+        private void RenameMenuEntriesOnBeforeQueryStatus(object sender, EventArgs eventArgs)
         {
             var solutionExplorerCommand = sender as OleMenuCommand;
             if (solutionExplorerCommand != null)
@@ -82,7 +88,7 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
                 // Get the new project name from the user.
                 var renameDialog = new RenameProjectDialog(RenameData, currentProject)
                 {
-                    Owner = System.Windows.Application.Current.MainWindow
+                    Owner = Application.Current.MainWindow
                 };
 
                 var result = renameDialog.ShowDialog();
@@ -169,14 +175,20 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
             }
             catch (COMException comException)
             {
+                Logger.Fatal(comException);
+
                 VsMessageBox.ShowErrorMessageBox("COMException", comException.ToString());
             }
             catch (IOException ioException)
             {
+                Logger.Fatal(ioException);
+
                 VsMessageBox.ShowErrorMessageBox("IOException", ioException.ToString());
             }
             catch (Exception exception)
             {
+                Logger.Fatal(exception);
+
                 VsMessageBox.ShowErrorMessageBox("Unknown Exception", exception.ToString());
             }
         }
@@ -194,7 +206,7 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
 
         private void SaveSolution()
         {
-            StatusBarHelper.Update("Saving the current solution...");
+            UpdateStatusBar("Saving the current solution...");
 
             if (RenameData.Dte.Solution.IsDirty)
             {
@@ -268,7 +280,7 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
 
         private void CheckProjectsForReferences()
         {
-            StatusBarHelper.Update("Checking other projects for references to the renamed one...");
+            UpdateStatusBar("Checking other projects for references to the renamed one...");
 
             foreach (Project proj in RenameData.Dte.Solution.Projects)
             {
@@ -327,7 +339,7 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
 
         private void RemoveProjectFromSolution(IVsHierarchy projectHierarchy)
         {
-            StatusBarHelper.Update("Removing the old project from the solution...");
+            UpdateStatusBar("Removing the old project from the solution...");
 
             RenameData.Solution.CloseSolutionElement(
                         (uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave |
@@ -336,7 +348,7 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
         
         private void MoveProjectFolder(string fullProjectName, string newProjectDirectory)
         {
-            StatusBarHelper.Update("Moving the project within the file system...");
+            UpdateStatusBar("Moving the project within the file system...");
 
             var parentProjectDirectory = new DirectoryInfo(fullProjectName).Parent;
 
@@ -359,7 +371,7 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
 
         private Project AddProjectToSolution(SolutionFolder solutionFolder, string newProjectFileName, string fullProjectName, string newProjectDirectory)
         {
-            StatusBarHelper.Update("Adding the new project to the solution...");
+            UpdateStatusBar("Adding the new project to the solution...");
 
             var parentProjectDirectory = new DirectoryInfo(fullProjectName).Parent;
 
@@ -390,7 +402,7 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
 
         private void ChangeAssemblyData(Project currentProject, IVsHierarchy currentProjectHierarchy)
         {
-            StatusBarHelper.Update("Changing Assembly data...");
+            UpdateStatusBar("Changing Assembly data...");
 
             var newProjectName = RenameData.NewProjectName;
             var oldProjectFileName = RenameData.OldProjectFileName;
@@ -446,7 +458,7 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
 
         private void ChangeProjectData(Project project)
         {
-            StatusBarHelper.Update("Changing project data...");
+            UpdateStatusBar("Changing project data...");
 
             var newProjectName = RenameData.NewProjectName;
             var oldProjectFileName = RenameData.OldProjectFileName;
@@ -468,12 +480,19 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
 
         private void SaveProject(Project project, IVsHierarchy projectHierarchy)
         {
-            StatusBarHelper.Update("Saving the renamed project...");
+            UpdateStatusBar("Saving the renamed project...");
 
             if (project.IsDirty)
             {
                 RenameData.Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, projectHierarchy, 0);
             }
+        }
+
+        private void UpdateStatusBar(string text)
+        {
+            StatusBarHelper.Update(text);
+
+            Logger.Trace(text);
         }
     }
 }
