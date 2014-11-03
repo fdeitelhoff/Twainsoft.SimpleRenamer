@@ -2,8 +2,8 @@
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
     <Identity Id="140b0282-2aaa-4427-a545-4fd4452656af" Version="0.1" Language="en-US" Publisher="Twainsoft" />
-    <DisplayName>Twainsoft SolutionRenamer</DisplayName>
-    <Description xml:space="preserve">Renames Solutions and Projects within Visual Studio.</Description>
+    <DisplayName>Twainsoft SimpleRenamer</DisplayName>
+    <Description xml:space="preserve">Renames Projects within Visual Studio with additional refactoring features.</Description>
   </Metadata>
   <Installation InstalledByMsi="false">
     <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[12.0]" />
