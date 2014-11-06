@@ -9,6 +9,8 @@ using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using NLog;
+using NLog.Config;
+using NLog.Targets;
 using Twainsoft.SimpleRenamer.VSPackage.GUI;
 using VSLangProj110;
 using VSLangProj80;
@@ -29,7 +31,34 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
         {
             base.Initialize();
 
+            // Step 1. Create configuration object 
+            var config = new LoggingConfiguration();
+
+            // Step 2. Create targets and add them to the configuration 
+            //var consoleTarget = new ColoredConsoleTarget();
+            //config.AddTarget("console", consoleTarget);
+
+            var fileTarget = new FileTarget();
+            config.AddTarget("file", fileTarget);
+
+            // Step 3. Set target properties 
+            //consoleTarget.Layout = @"${date:format=HH\:MM\:ss} ${logger} ${message}";
+            fileTarget.FileName = "${specialfolder:folder=Desktop:file=renaming.log}";
+            fileTarget.Layout = "${message}";
+
+            // Step 4. Define rules
+            //var rule1 = new LoggingRule("*", LogLevel.Debug, consoleTarget);
+            //config.LoggingRules.Add(rule1);
+
+            var rule2 = new LoggingRule("*", LogLevel.Debug, fileTarget);
+            config.LoggingRules.Add(rule2);
+
+            // Step 5. Activate the configuration
+            LogManager.Configuration = config;
+
+            //LogManager.ThrowExceptions = true;
             Logger = LogManager.GetCurrentClassLogger();
+            Logger.Trace("test");
 
             var mcs = GetService(typeof(IMenuCommandService)) as OleMenuCommandService;
             if (mcs == null)
