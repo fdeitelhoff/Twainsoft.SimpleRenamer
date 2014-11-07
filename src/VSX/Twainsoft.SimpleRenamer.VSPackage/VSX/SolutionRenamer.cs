@@ -43,7 +43,7 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
 
             // Step 3. Set target properties 
             //consoleTarget.Layout = @"${date:format=HH\:MM\:ss} ${logger} ${message}";
-            fileTarget.FileName = "${specialfolder:folder=Desktop:file=renaming.log}";
+            fileTarget.FileName = @"D:\log.log";
             fileTarget.Layout = "${message}";
 
             // Step 4. Define rules
