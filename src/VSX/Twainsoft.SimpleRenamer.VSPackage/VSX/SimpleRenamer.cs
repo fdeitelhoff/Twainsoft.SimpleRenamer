@@ -12,6 +12,7 @@ using NLog;
 using NLog.Config;
 using NLog.Targets;
 using Twainsoft.SimpleRenamer.VSPackage.GUI;
+using Twainsoft.SimpleRenamer.VSPackage.GUI.Options;
 using VSLangProj110;
 using VSLangProj80;
 
@@ -22,7 +23,8 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [Guid(GuidList.SolutionRenamerVsPackagePkgString)]
     [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExists_string)]
-    public sealed class SolutionRenamer : Package
+    [ProvideOptionPage(typeof(OptionsStore), "Twainsoft SimpleRenamer", "General", 0, 0, true)]
+    public sealed class SimpleRenamer : Package
     {
         private RenameData RenameData { get; set; }
         private static Logger Logger { get; set; }
@@ -31,32 +33,19 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
         {
             base.Initialize();
 
-            // Step 1. Create configuration object 
             var config = new LoggingConfiguration();
-
-            // Step 2. Create targets and add them to the configuration 
-            //var consoleTarget = new ColoredConsoleTarget();
-            //config.AddTarget("console", consoleTarget);
 
             var fileTarget = new FileTarget();
             config.AddTarget("file", fileTarget);
 
-            // Step 3. Set target properties 
-            //consoleTarget.Layout = @"${date:format=HH\:MM\:ss} ${logger} ${message}";
             fileTarget.FileName = @"D:\log.log";
             fileTarget.Layout = "${message}";
-
-            // Step 4. Define rules
-            //var rule1 = new LoggingRule("*", LogLevel.Debug, consoleTarget);
-            //config.LoggingRules.Add(rule1);
 
             var rule2 = new LoggingRule("*", LogLevel.Debug, fileTarget);
             config.LoggingRules.Add(rule2);
 
-            // Step 5. Activate the configuration
             LogManager.Configuration = config;
 
-            //LogManager.ThrowExceptions = true;
             Logger = LogManager.GetCurrentClassLogger();
             Logger.Trace("test");
 

@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Runtime.InteropServices;
+using System.Windows.Forms;
 using Microsoft.VisualStudio.Shell;
 
 namespace Twainsoft.SimpleRenamer.VSPackage.GUI.Options
@@ -9,13 +10,38 @@ namespace Twainsoft.SimpleRenamer.VSPackage.GUI.Options
     public class OptionsStore : DialogPage
     {
         [Category("Twainsoft SimpleRenamer")]
-        [DisplayName("Should the complete solution be compiled after the renaming was successfully?")]
+        [DisplayName("ApplicationProperties")]
+        [Description("Change Application Properties of the renamed project?")]
+        public bool ChangeApplicationPropertiesAfterRenaming { get; set; }
+
+        [Category("Twainsoft SimpleRenamer")]
+        [DisplayName("AssemblyInfo")]
+        [Description("Change Strings in the AssemblyInfo.cs of the renamed project?")]
+        public bool ChangeAssemblyInfoAfterRenaming { get; set; }
+
+        [Category("Twainsoft SimpleRenamer")]
+        [DisplayName("ProjectReferences")]
+        [Description("Change References for the renamed project?")]
+        public bool ChangeProjectReferencesAfterRenaming { get; set; }
+        
+        [Category("Twainsoft SimpleRenamer")]
+        [DisplayName("StartupProject")]
+        [Description("Restore Startup Project after renaming?")]
+        public bool RestoreStartupProjectAfterRenaming { get; set; }
+
+        [Category("Twainsoft SimpleRenamer")]
+        [DisplayName("CompileSolution")]
         [Description("Should the complete solution be compiled after the renaming was successfully?")]
         public bool CompileSolutionAfterRenaming { get; set; }
 
-        [Category("Twainsoft SimpleRenamer")]
-        [DisplayName("Change Strings in the AssemblyInfo.cs of the renamed project?")]
-        [Description("Change Strings in the AssemblyInfo.cs of the renamed project?")]
-        public bool ChangeAssemblyInfoAfterRenaming { get; set; }
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        protected override IWin32Window Window
+        {
+            get
+            {
+                return new OptionsView(this);
+            }
+        }
     }
 }
