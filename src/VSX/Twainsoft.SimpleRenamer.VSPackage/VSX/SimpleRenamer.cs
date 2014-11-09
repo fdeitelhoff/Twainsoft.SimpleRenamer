@@ -33,21 +33,7 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
         {
             base.Initialize();
 
-            var config = new LoggingConfiguration();
-
-            var fileTarget = new FileTarget();
-            config.AddTarget("file", fileTarget);
-
-            fileTarget.FileName = @"D:\log.log";
-            fileTarget.Layout = "${message}";
-
-            var rule2 = new LoggingRule("*", LogLevel.Debug, fileTarget);
-            config.LoggingRules.Add(rule2);
-
-            LogManager.Configuration = config;
-
-            Logger = LogManager.GetCurrentClassLogger();
-            Logger.Trace("test");
+            CreateNLogInstance();
 
             var mcs = GetService(typeof(IMenuCommandService)) as OleMenuCommandService;
             if (mcs == null)
@@ -71,6 +57,8 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
             RenameData = new RenameData();
 
             GetGlobalServices();
+
+            UpdateStatusBar("SimpleRenamer extension successfully initialized...");
         }
 
         private void RenameMenuEntriesOnBeforeQueryStatus(object sender, EventArgs eventArgs)
@@ -115,8 +103,11 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
                     return;
                 }
 
+                UpdateStatusBar(string.Format("The project '{0}' is selected and will be renamed...", currentProject.Name));
+
                 // This is the new project name the user typed in.
                 RenameData.NewProjectName = renameDialog.GetProjectName();
+                UpdateStatusBar(string.Format("The new project name is '{0}'...", RenameData.NewProjectName));
 
                 // Check if this is necessary when the references check was refactored!
                 RenameData.ProjectsWithReferences.Clear();
@@ -139,6 +130,8 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
                 RenameData.RenamedProject = currentProject;
 
                 // Rename the project. This changes the project filename too!
+                UpdateStatusBar(string.Format("Renaming the project '{0}' to '{1}'...", currentProject.Name,
+                    RenameData.NewProjectName));
                 currentProject.Name = RenameData.NewProjectName;
 
                 // The hierarchy is needed for some of the following actions.
@@ -147,6 +140,9 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
 
                 if (RenameData.OldProjectFileName == projectParentDirectory)
                 {
+                    UpdateStatusBar(string.Format("The directory name '{0}' is the same as the old project name '{1}'",
+                        projectParentDirectory, RenameData.OldProjectFileName));
+
                     // Check if other projects have references to the currently selected project. These references must be changed too!
                     CheckProjectsForReferences();
 
@@ -180,16 +176,21 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
                 SaveProject(currentProject, currentProjectHierarchy);
 
                 // Change some data in the AssemblyInfo.cs file if those data matches the old project name! (AssemblyTitle and AssemblyProduct)
-                ChangeAssemblyData(currentProject, currentProjectHierarchy);
+                ChangeAssemblyData(currentProject);
+
+                // Save the project after we made so many changes to it.
+                SaveProject(currentProject, currentProjectHierarchy);
 
                 // If the renamed project was the startup project, we need to refresh this setting after it was deleted.
                 if (isStartupProject)
                 {
+                    UpdateStatusBar(string.Format("Set the startup project to '{0}'...", currentProject.Name));
+
                     RenameData.Dte.Solution.Properties.Item("StartupProject").Value = currentProject.Name;
                 }
 
                 // Rebuild the complete solution.
-                RenameData.Dte.Solution.SolutionBuild.Build();
+                RebuildSolution();
             }
             catch (COMException comException)
             {
@@ -209,6 +210,33 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
 
                 VsMessageBox.ShowErrorMessageBox("Unknown Exception", exception.ToString());
             }
+        }
+
+        private void RebuildSolution()
+        {
+            UpdateStatusBar("Rebuilding the complete solution...");
+
+            RenameData.Dte.Solution.SolutionBuild.Build();
+        }
+
+        private void CreateNLogInstance()
+        {
+            var config = new LoggingConfiguration();
+
+            var fileTarget = new FileTarget
+            {
+                FileName = @"${specialfolder:folder=ApplicationData}\Twainsoft\SimpleRenamer\renaming.log",
+                Layout = "${longdate}|${level}|${message}|${exception}",
+                AutoFlush = true
+            };
+
+            config.AddTarget("file", fileTarget);
+
+            var fileTargetRule = new LoggingRule("*", LogLevel.Trace, fileTarget);
+            config.LoggingRules.Add(fileTargetRule);
+
+            LogManager.Configuration = config;
+            Logger = LogManager.GetCurrentClassLogger();
         }
 
         private void GetGlobalServices()
@@ -348,8 +376,12 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
                 // SourceProject points to a project in this solution. If it's null, we have a reference to a framework library here.
                 // The full name of the source project and the renamed project must be equal. After the project is renamed the references are updated automatically!
                 // Check if this is necessary: && reference.Name == RenameData.NewProjectName 
-                if (reference.SourceProject != null && reference.SourceProject.FullName == RenameData.RenamedProject.FullName)
+                if (reference.SourceProject != null
+                    && reference.SourceProject.FullName == RenameData.RenamedProject.FullName)
                 {
+                    UpdateStatusBar(string.Format("Project '{0}' has a reference to the renamed project...",
+                        project.Name));
+
                     RenameData.ProjectsWithReferences.Add(project);
                 }
             }
@@ -418,40 +450,6 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
                         Path.Combine(Path.Combine(parentProjectParentDirectory.FullName, newProjectDirectory), newProjectFileName));
         }
 
-        private void ChangeAssemblyData(Project currentProject, IVsHierarchy currentProjectHierarchy)
-        {
-            UpdateStatusBar("Changing Assembly data...");
-
-            var newProjectName = RenameData.NewProjectName;
-            var oldProjectFileName = RenameData.OldProjectFileName;
-
-            var properties = currentProject.ProjectItems.Item("Properties");
-            var assemblyInfo = properties.ProjectItems.Item("AssemblyInfo.cs");
-
-            var assemblyTitle = assemblyInfo.FileCodeModel.CodeElements.Item("AssemblyTitle") as CodeAttribute2;
-            var assemblyProduct = assemblyInfo.FileCodeModel.CodeElements.Item("AssemblyProduct") as CodeAttribute2;
-
-            if (assemblyTitle == null || assemblyProduct == null)
-            {
-                throw new InvalidOperationException("AssemblyTitle Or AssemblyProduct Attribute Is Null!");
-            }
-
-            if (assemblyTitle.Value.Contains(oldProjectFileName))
-            {
-                assemblyTitle.Value = assemblyTitle.Value.Replace(oldProjectFileName, newProjectName);
-            }
-
-            if (assemblyProduct.Value.Contains(oldProjectFileName))
-            {
-                assemblyProduct.Value = assemblyProduct.Value.Replace(oldProjectFileName, newProjectName);
-            }
-
-            if (assemblyInfo.IsDirty)
-            {
-                RenameData.Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, currentProjectHierarchy, 0);
-            }
-        }
-
         private void ChangeRenamedProjectReferences(Project currentProject)
         {
             foreach (var proj in RenameData.ProjectsWithReferences)
@@ -471,6 +469,35 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
                 }
 
                 references.AddProject(currentProject);
+            }
+        }
+
+        private void ChangeAssemblyData(Project project)
+        {
+            UpdateStatusBar("Changing Assembly data...");
+
+            var newProjectName = RenameData.NewProjectName;
+            var oldProjectFileName = RenameData.OldProjectFileName;
+
+            var properties = project.ProjectItems.Item("Properties");
+            var assemblyInfo = properties.ProjectItems.Item("AssemblyInfo.cs");
+
+            var assemblyTitle = assemblyInfo.FileCodeModel.CodeElements.Item("AssemblyTitle") as CodeAttribute2;
+            var assemblyProduct = assemblyInfo.FileCodeModel.CodeElements.Item("AssemblyProduct") as CodeAttribute2;
+
+            if (assemblyTitle == null || assemblyProduct == null)
+            {
+                throw new InvalidOperationException("AssemblyTitle Or AssemblyProduct Attribute Is Null!");
+            }
+
+            if (assemblyTitle.Value.Contains(oldProjectFileName))
+            {
+                assemblyTitle.Value = assemblyTitle.Value.Replace(oldProjectFileName, newProjectName);
+            }
+
+            if (assemblyProduct.Value.Contains(oldProjectFileName))
+            {
+                assemblyProduct.Value = assemblyProduct.Value.Replace(oldProjectFileName, newProjectName);
             }
         }
 
@@ -498,17 +525,17 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
 
         private void SaveProject(Project project, IVsHierarchy projectHierarchy)
         {
-            UpdateStatusBar("Saving the renamed project...");
-
             if (project.IsDirty)
             {
+                UpdateStatusBar(string.Format("Saving the project '{0}'...", project.Name));
+
                 RenameData.Solution.SaveSolutionElement((uint)__VSSLNSAVEOPTIONS.SLNSAVEOPT_ForceSave, projectHierarchy, 0);
             }
         }
 
         private void UpdateStatusBar(string text)
         {
-            StatusBarHelper.Update(text);
+            StatusBarHelper.UpdateText(text);
 
             Logger.Trace(text);
         }

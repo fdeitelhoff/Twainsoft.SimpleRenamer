@@ -6,7 +6,7 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
 {
     public static class StatusBarHelper
     {
-        public static void Update(string text)
+        public static void UpdateText(string text)
         {
             var statusBar = Package.GetGlobalService(typeof(SVsStatusbar)) as IVsStatusbar;
 
