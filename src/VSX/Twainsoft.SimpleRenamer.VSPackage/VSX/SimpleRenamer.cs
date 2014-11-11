@@ -3,6 +3,7 @@ using System.ComponentModel.Design;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Forms.Design;
 using EnvDTE;
 using EnvDTE80;
 using Microsoft.VisualStudio;
@@ -21,13 +22,14 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
     [PackageRegistration(UseManagedResourcesOnly = true)]
     [InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
-    [Guid(GuidList.SolutionRenamerVsPackagePkgString)]
+    [Guid(Guids.SolutionRenamerVsPackagePkgString)]
     [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExists_string)]
     [ProvideOptionPage(typeof(OptionsStore), "Twainsoft SimpleRenamer", "General", 0, 0, true)]
     public sealed class SimpleRenamer : Package
     {
         private RenameData RenameData { get; set; }
         private static Logger Logger { get; set; }
+        private OptionsStore OptionsStore { get; set; }
 
         protected override void Initialize()
         {
@@ -42,16 +44,19 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
             }
 
             // The Solution Explorer tool bar entry.
-            var solutionExplorerCommandId = new CommandID(GuidList.SolutionRenamerVsPackageCmdSet, (int)PkgCmdIdList.SolutionExplorerCommandId);
+            var solutionExplorerCommandId = new CommandID(Guids.SolutionRenamerVsPackageCmdSet, (int)CommandIds.SolutionExplorerCommandId);
             var solutionExplorerMenu = new OleMenuCommand(OnRenameProject, solutionExplorerCommandId);
             solutionExplorerMenu.BeforeQueryStatus += RenameMenuEntriesOnBeforeQueryStatus;
             mcs.AddCommand(solutionExplorerMenu);
 
             // The context menu entry.
-            var contextMenuCommandId = new CommandID(GuidList.SolutionRenamerVsPackageCmdSet, (int)PkgCmdIdList.ContextMenuCommandId);
+            var contextMenuCommandId = new CommandID(Guids.SolutionRenamerVsPackageCmdSet, (int)CommandIds.ContextMenuCommandId);
             var contextMenu = new OleMenuCommand(OnRenameProject, contextMenuCommandId);
             contextMenu.BeforeQueryStatus += RenameMenuEntriesOnBeforeQueryStatus;
             mcs.AddCommand(contextMenu);
+
+            // The overall options store for this package.
+            OptionsStore = GetDialogPage(typeof(OptionsStore)) as OptionsStore;
 
             // Data we need all the time during the rename process.
             RenameData = new RenameData();
@@ -170,13 +175,19 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
                 ChangeRenamedProjectReferences(currentProject);
 
                 // Change some project data like the default namespace and the assembly name. 
-                ChangeProjectData(currentProject);
+                if (OptionsStore.ChangeApplicationPropertiesAfterRenaming)
+                {
+                    ChangeProjectProperties(currentProject);
+                }
 
                 // Save the project after we made so many changes to it.
                 SaveProject(currentProject, currentProjectHierarchy);
 
-                // Change some data in the AssemblyInfo.cs file if those data matches the old project name! (AssemblyTitle and AssemblyProduct)
-                ChangeAssemblyData(currentProject);
+                // Change some data in the AssemblyInfo.cs file if those data matches the old project name (AssemblyTitle and AssemblyProduct)
+                if (OptionsStore.ChangeAssemblyInfoAfterRenaming)
+                {
+                    ChangeAssemblyInfo(currentProject);
+                }
 
                 // Save the project after we made so many changes to it.
                 SaveProject(currentProject, currentProjectHierarchy);
@@ -472,7 +483,7 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
             }
         }
 
-        private void ChangeAssemblyData(Project project)
+        private void ChangeAssemblyInfo(Project project)
         {
             UpdateStatusBar("Changing Assembly data...");
 
@@ -501,7 +512,7 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
             }
         }
 
-        private void ChangeProjectData(Project project)
+        private void ChangeProjectProperties(Project project)
         {
             UpdateStatusBar("Changing project data...");
 

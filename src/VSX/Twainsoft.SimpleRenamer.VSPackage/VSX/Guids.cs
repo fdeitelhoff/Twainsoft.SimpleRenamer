@@ -2,7 +2,7 @@
 
 namespace Twainsoft.SimpleRenamer.VSPackage.VSX
 {
-    static class GuidList
+    static class Guids
     {
         public const string SolutionRenamerVsPackagePkgString = "140b0282-2aaa-4427-a545-4fd4452656af";
 
