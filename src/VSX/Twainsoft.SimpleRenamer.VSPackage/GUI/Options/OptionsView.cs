@@ -21,7 +21,24 @@ namespace Twainsoft.SimpleRenamer.VSPackage.GUI.Options
 
         private void Initialize()
         {
-            
+            changeProjectProperties.Checked = OptionsStore.ChangeProjectPropertiesAfterRenaming;
+            changeAssemblyInfo.Checked = OptionsStore.ChangeAssemblyInfoAfterRenaming;
+            changeProjectReferences.Checked = OptionsStore.ChangeProjectReferencesAfterRenaming;
+        }
+
+        private void changeProjectProperties_CheckedChanged(object sender, System.EventArgs e)
+        {
+            OptionsStore.ChangeProjectPropertiesAfterRenaming = changeProjectProperties.Checked;
+        }
+
+        private void changeAssemblyInfo_CheckedChanged(object sender, System.EventArgs e)
+        {
+            OptionsStore.ChangeAssemblyInfoAfterRenaming = changeAssemblyInfo.Checked;
+        }
+
+        private void changeProjectReferences_CheckedChanged(object sender, System.EventArgs e)
+        {
+            OptionsStore.ChangeProjectReferencesAfterRenaming = changeProjectReferences.Checked;
         }
     }
 }

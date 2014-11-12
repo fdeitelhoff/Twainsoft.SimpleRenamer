@@ -10,9 +10,9 @@ namespace Twainsoft.SimpleRenamer.VSPackage.GUI.Options
     public class OptionsStore : DialogPage
     {
         [Category("Twainsoft SimpleRenamer")]
-        [DisplayName("ApplicationProperties")]
+        [DisplayName("ProjectProperties")]
         [Description("Change Application Properties of the renamed project?")]
-        public bool ChangeApplicationPropertiesAfterRenaming { get; set; }
+        public bool ChangeProjectPropertiesAfterRenaming { get; set; }
 
         [Category("Twainsoft SimpleRenamer")]
         [DisplayName("AssemblyInfo")]

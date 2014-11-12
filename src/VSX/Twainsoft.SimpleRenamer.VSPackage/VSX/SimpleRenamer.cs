@@ -149,7 +149,10 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
                         projectParentDirectory, RenameData.OldProjectFileName));
 
                     // Check if other projects have references to the currently selected project. These references must be changed too!
-                    CheckProjectsForReferences();
+                    if (OptionsStore.ChangeProjectReferencesAfterRenaming)
+                    {
+                        CheckProjectsForReferences();
+                    }
 
                     // We need some data for future actions. Collect them here because the project is ready to get removed from the solution!
                     var newProjectFileName = Path.GetFileName(currentProject.FileName);
@@ -172,10 +175,13 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
                 }
 
                 // Change the reference of the renamed project within all other projects that had such a reference.
-                ChangeRenamedProjectReferences(currentProject);
+                if (OptionsStore.ChangeProjectReferencesAfterRenaming)
+                {
+                    ChangeRenamedProjectReferences(currentProject);
+                }
 
                 // Change some project data like the default namespace and the assembly name. 
-                if (OptionsStore.ChangeApplicationPropertiesAfterRenaming)
+                if (OptionsStore.ChangeProjectPropertiesAfterRenaming)
                 {
                     ChangeProjectProperties(currentProject);
                 }
