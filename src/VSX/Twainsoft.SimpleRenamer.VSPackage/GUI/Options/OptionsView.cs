@@ -24,6 +24,7 @@ namespace Twainsoft.SimpleRenamer.VSPackage.GUI.Options
             changeProjectProperties.Checked = OptionsStore.ChangeProjectPropertiesAfterRenaming;
             changeAssemblyInfo.Checked = OptionsStore.ChangeAssemblyInfoAfterRenaming;
             changeProjectReferences.Checked = OptionsStore.ChangeProjectReferencesAfterRenaming;
+            rebuildSolution.Checked = OptionsStore.RebuildSolutionAfterRenaming;
         }
 
         private void changeProjectProperties_CheckedChanged(object sender, System.EventArgs e)
@@ -39,6 +40,11 @@ namespace Twainsoft.SimpleRenamer.VSPackage.GUI.Options
         private void changeProjectReferences_CheckedChanged(object sender, System.EventArgs e)
         {
             OptionsStore.ChangeProjectReferencesAfterRenaming = changeProjectReferences.Checked;
+        }
+
+        private void rebuildSolution_CheckedChanged(object sender, System.EventArgs e)
+        {
+            OptionsStore.RebuildSolutionAfterRenaming = rebuildSolution.Checked;
         }
     }
 }

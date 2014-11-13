@@ -32,7 +32,7 @@ namespace Twainsoft.SimpleRenamer.VSPackage.GUI.Options
         [Category("Twainsoft SimpleRenamer")]
         [DisplayName("CompileSolution")]
         [Description("Should the complete solution be compiled after the renaming was successfully?")]
-        public bool CompileSolutionAfterRenaming { get; set; }
+        public bool RebuildSolutionAfterRenaming { get; set; }
 
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]

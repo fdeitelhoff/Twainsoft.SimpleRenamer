@@ -3,7 +3,6 @@ using System.ComponentModel.Design;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
-using System.Windows.Forms.Design;
 using EnvDTE;
 using EnvDTE80;
 using Microsoft.VisualStudio;
@@ -86,6 +85,8 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
         {
             try
             {
+                Logger.Trace("############################### New renaming procedure started... ###############################");
+
                 // Get the currently selected project within the solution explorer.
                 var currentProject = GetSelectedProject();
 
@@ -207,7 +208,10 @@ namespace Twainsoft.SimpleRenamer.VSPackage.VSX
                 }
 
                 // Rebuild the complete solution.
-                RebuildSolution();
+                if (OptionsStore.RebuildSolutionAfterRenaming)
+                {
+                    RebuildSolution();
+                }
             }
             catch (COMException comException)
             {

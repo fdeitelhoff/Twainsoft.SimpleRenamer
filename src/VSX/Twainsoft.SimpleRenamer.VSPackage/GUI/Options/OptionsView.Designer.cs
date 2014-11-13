@@ -29,12 +29,14 @@
         private void InitializeComponent()
         {
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.changeProjectReferences = new System.Windows.Forms.CheckBox();
+            this.label3 = new System.Windows.Forms.Label();
             this.changeAssemblyInfo = new System.Windows.Forms.CheckBox();
             this.label2 = new System.Windows.Forms.Label();
             this.changeProjectProperties = new System.Windows.Forms.CheckBox();
             this.label1 = new System.Windows.Forms.Label();
-            this.changeProjectReferences = new System.Windows.Forms.CheckBox();
-            this.label3 = new System.Windows.Forms.Label();
+            this.rebuildSolution = new System.Windows.Forms.CheckBox();
+            this.label4 = new System.Windows.Forms.Label();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -43,6 +45,8 @@
             this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.groupBox1.Controls.Add(this.rebuildSolution);
+            this.groupBox1.Controls.Add(this.label4);
             this.groupBox1.Controls.Add(this.changeProjectReferences);
             this.groupBox1.Controls.Add(this.label3);
             this.groupBox1.Controls.Add(this.changeAssemblyInfo);
@@ -55,6 +59,27 @@
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Renaming Options";
+            // 
+            // changeProjectReferences
+            // 
+            this.changeProjectReferences.AutoSize = true;
+            this.changeProjectReferences.Location = new System.Drawing.Point(9, 181);
+            this.changeProjectReferences.Name = "changeProjectReferences";
+            this.changeProjectReferences.Size = new System.Drawing.Size(163, 17);
+            this.changeProjectReferences.TabIndex = 5;
+            this.changeProjectReferences.Text = "Change Project References?";
+            this.changeProjectReferences.UseVisualStyleBackColor = true;
+            this.changeProjectReferences.CheckedChanged += new System.EventHandler(this.changeProjectReferences_CheckedChanged);
+            // 
+            // label3
+            // 
+            this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.label3.Location = new System.Drawing.Point(6, 160);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(421, 18);
+            this.label3.TabIndex = 4;
+            this.label3.Text = "Change references from other projects to the renamed one?";
             // 
             // changeAssemblyInfo
             // 
@@ -100,26 +125,26 @@
             this.label1.Text = "Change the Project Properties (DefaultNamespace and AssemblyName) after the proje" +
     "ct was renamed?";
             // 
-            // changeProjectReferences
+            // rebuildSolution
             // 
-            this.changeProjectReferences.AutoSize = true;
-            this.changeProjectReferences.Location = new System.Drawing.Point(9, 181);
-            this.changeProjectReferences.Name = "changeProjectReferences";
-            this.changeProjectReferences.Size = new System.Drawing.Size(163, 17);
-            this.changeProjectReferences.TabIndex = 5;
-            this.changeProjectReferences.Text = "Change Project References?";
-            this.changeProjectReferences.UseVisualStyleBackColor = true;
-            this.changeProjectReferences.CheckedChanged += new System.EventHandler(this.changeProjectReferences_CheckedChanged);
+            this.rebuildSolution.AutoSize = true;
+            this.rebuildSolution.Location = new System.Drawing.Point(9, 240);
+            this.rebuildSolution.Name = "rebuildSolution";
+            this.rebuildSolution.Size = new System.Drawing.Size(156, 17);
+            this.rebuildSolution.TabIndex = 7;
+            this.rebuildSolution.Text = "Rebuild Complete Solution?";
+            this.rebuildSolution.UseVisualStyleBackColor = true;
+            this.rebuildSolution.CheckedChanged += new System.EventHandler(this.rebuildSolution_CheckedChanged);
             // 
-            // label3
+            // label4
             // 
-            this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.label4.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.label3.Location = new System.Drawing.Point(6, 160);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(421, 18);
-            this.label3.TabIndex = 4;
-            this.label3.Text = "Change references from other projects to the renamed one?";
+            this.label4.Location = new System.Drawing.Point(6, 219);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(421, 18);
+            this.label4.TabIndex = 6;
+            this.label4.Text = "Rebuild the complete solution after the project was renamed?";
             // 
             // OptionsView
             // 
@@ -143,5 +168,7 @@
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.CheckBox changeProjectReferences;
         private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.CheckBox rebuildSolution;
+        private System.Windows.Forms.Label label4;
     }
 }
